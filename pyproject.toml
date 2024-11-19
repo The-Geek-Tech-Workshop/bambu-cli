@@ -1,0 +1,15 @@
+[project]
+name = "bambu-cli"
+version = "0.1.0"
+description = "Default template for PDM package"
+authors = [
+    {name = "Andrew Todd", email = "emailandytodd@gmail.com"},
+]
+dependencies = ["paho-mqtt>=2.1.0", "ftputil>=5.1.0", "enlighten>=1.12.4", "sshkeyboard>=2.3.1", "requests>=2.32.3"]
+requires-python = "==3.12.*"
+readme = "README.md"
+license = {text = "MIT"}
+
+
+[tool.pdm]
+distribution = false
