@@ -37,4 +37,4 @@ While print is in progress:
  - Press 'q' to exit the interface without affecting the print job
 
 ## License
-MIT License - see LICENSE file for details ```
+GNU 3.0 License - see LICENSE file for details ```
