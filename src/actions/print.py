@@ -76,8 +76,8 @@ def print_file(args):
 
     def on_press(key):
         match key:
-            case 's':
-                logger.info('Stopping print')
+            case 'c':
+                logger.info('Cancelling print')
                 bambuMqttClient.stop_print()
             case 'q':
                 logger.info('Quitting')

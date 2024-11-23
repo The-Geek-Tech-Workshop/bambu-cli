@@ -1,7 +1,7 @@
 [project]
 name = "bambu-cli"
 version = "0.1.0"
-description = "Default template for PDM package"
+description = "CLI tool for use with Bambu Printers"
 authors = [
     {name = "Andrew Todd", email = "emailandytodd@gmail.com"},
 ]
@@ -9,6 +9,9 @@ dependencies = ["paho-mqtt>=2.1.0", "ftputil>=5.1.0", "enlighten>=1.12.4", "sshk
 requires-python = "==3.12.*"
 readme = "README.md"
 license = {text = "MIT"}
+
+[project.scripts]
+bambu = "cli:main"
 
 
 [tool.pdm]
