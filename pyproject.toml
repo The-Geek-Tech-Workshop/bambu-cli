@@ -19,7 +19,7 @@ readme = "README.md"
 license = { text = "GPL3" }
 
 [project.scripts]
-bambu = "cli:main"
+bambu = "bambu-cli.cli:main"
 
 
 [tool.pdm]

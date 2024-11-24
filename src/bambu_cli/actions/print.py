@@ -17,7 +17,7 @@ def print_file(args):
 
     manager = enlighten.get_manager()
     manager.status_bar(
-        status_format='Press "s" to stop, "p" to pause, "r" to resume, "q" to quit',
+        status_format='Press "c" to cancel, "p" to pause, "r" to resume, "q" to quit',
         justify=enlighten.Justify.CENTER,
     )
     status_bar = manager.status_bar(
