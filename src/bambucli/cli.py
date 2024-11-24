@@ -5,7 +5,7 @@ from bambucli.actions.print import print_file
 from bambucli.actions.add import add_printer
 import logging
 
-from actions.upload import upload_file
+from bambucli.actions.upload import upload_file
 
 logging.basicConfig(level=logging.INFO, filename='bambu.log',
                     datefmt='%Y-%m-%d %H:%M:%S')
