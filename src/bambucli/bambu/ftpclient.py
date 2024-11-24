@@ -1,7 +1,7 @@
 import logging
 from pathlib import Path
 import ssl
-from ftpsimplicit import ImplicitFTP_TLS
+from bambucli.ftpsimplicit import ImplicitFTP_TLS
 
 logger = logging.getLogger(__name__)
 BAMBU_FTP_USER = 'bblp'
