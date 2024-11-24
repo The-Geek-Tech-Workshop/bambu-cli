@@ -10,8 +10,15 @@ A command-line interface for controlling Bambu Lab 3D printers via MQTT and FTPS
 - Pause, resume and cancel print in progress
 
 ## Installation
+
+Either as a Python library:
 ```bash
 pip install bambu-cli
+```
+
+or as a Docker image:
+```bash
+docker run -it -v ~/.bambu-cli:/root/.bambu-cli -v $PWD:/root -w /root thegeektechworkshop/bambu-cli 
 ```
 
 ## Usage
