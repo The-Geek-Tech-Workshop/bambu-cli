@@ -1,0 +1,22 @@
+name: Publish to PyPI
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup PDM
+        uses: pdm-project/setup-pdm@v4
+        with:
+          python-version: 3.12
+          
+      - name: Install dependencies
+        run: pdm install
+        
+      - name: Build package and Publish to PyPI
+        run: pdm publish
