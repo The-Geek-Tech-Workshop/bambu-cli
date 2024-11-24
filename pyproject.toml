@@ -28,3 +28,7 @@ distribution = true
 [tool.pdm.version]
 source = "scm"
 tag_regex = "v(.+)"
+
+[tool.pdm.options]
+add = ["--no-self"]
+install = ["--no-self"]
