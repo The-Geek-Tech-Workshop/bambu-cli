@@ -1,10 +1,8 @@
-#!/usr/bin/env python
-
 import argparse
-from actions.login import login
-from actions.info import get_version_info
-from actions.print import print_file
-from actions.add import add_printer
+from bambucli.actions.login import login
+from bambucli.actions.info import get_version_info
+from bambucli.actions.print import print_file
+from bambucli.actions.add import add_printer
 import logging
 
 from actions.upload import upload_file

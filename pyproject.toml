@@ -19,11 +19,15 @@ readme = "README.md"
 license = { text = "GPL3" }
 
 [project.scripts]
-bambu = "bambu_cli.cli:main"
+bambu = "bambucli.cli:main"
 
 
 [tool.pdm]
 distribution = true
+
+[tool.pdm.build]
+package-dir = "src"
+includes = ["src/bambucli"]
 
 [tool.pdm.version]
 source = "scm"

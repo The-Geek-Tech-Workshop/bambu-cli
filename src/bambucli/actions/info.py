@@ -1,5 +1,5 @@
-from bambu.mqttclient import MqttClient
-from config import get_printer
+from bambucli.bambu.mqttclient import MqttClient
+from bambucli.config import get_printer
 import logging
 
 logger = logging.getLogger(__name__)

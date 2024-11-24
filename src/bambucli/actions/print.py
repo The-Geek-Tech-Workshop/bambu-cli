@@ -1,8 +1,8 @@
 import logging
-from bambu.messages.onpushstatus import PrintErrorCode
-from bambu.mqttclient import MqttClient
-from bambu.printer import LocalPrinter
-from config import get_printer
+from bambucli.bambu.messages.onpushstatus import PrintErrorCode
+from bambucli.bambu.mqttclient import MqttClient
+from bambucli.bambu.printer import LocalPrinter
+from bambucli.config import get_printer
 from sshkeyboard import listen_keyboard, stop_listening
 import enlighten
 

@@ -1,6 +1,6 @@
 import logging
-from bambu.printer import LocalPrinter
-from config import add_printer as add_printer_to_config
+from bambucli.bambu.printer import LocalPrinter
+from bambucli.config import add_printer as add_printer_to_config
 
 logger = logging.getLogger(__name__)
 

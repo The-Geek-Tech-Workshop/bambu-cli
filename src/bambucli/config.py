@@ -1,4 +1,4 @@
-from bambu.printer import LocalPrinter, Printer
+from bambucli.bambu.printer import LocalPrinter, Printer
 import json
 from pathlib import Path
 import logging

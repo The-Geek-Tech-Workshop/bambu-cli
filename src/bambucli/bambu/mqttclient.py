@@ -1,8 +1,8 @@
 
 import uuid
-from bambu.messages.getversion import GetVersionMessage
-from bambu.messages.onpushstatus import OnPushStatusMessage
-from bambu.printer import LocalPrinter, Printer
+from bambucli.bambu.messages.getversion import GetVersionMessage
+from bambucli.bambu.messages.onpushstatus import OnPushStatusMessage
+from bambucli.bambu.printer import LocalPrinter, Printer
 import paho.mqtt.client as mqtt
 from paho.mqtt.enums import CallbackAPIVersion
 import ssl

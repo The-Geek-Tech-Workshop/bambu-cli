@@ -1,5 +1,5 @@
-from bambu.ftpclient import FtpClient
-from config import get_printer
+from bambucli.bambu.ftpclient import FtpClient
+from bambucli.config import get_printer
 
 BAMBU_FTP_PORT = 990
 BAMBU_FTP_USER = 'bblp'
