@@ -18,10 +18,17 @@ pip install bambu-cli
 
 or as a Docker image:
 ```bash
-docker run -it -v ~/.bambu-cli:/root/.bambu-cli -v $PWD:/root -w /root thegeektechworkshop/bambu-cli 
+docker pull thegeektechworkshop/bambu-cli 
 ```
 
 ## Usage
+
+If using the Docker image, it is recommended to create a shell script wrapper such as:
+```bash
+#!/usr/bin/env bash
+docker run -it -v ~/.bambu-cli:/root/.bambu-cli -v $PWD:/root -w /root thegeektechworkshop/bambu-cli $@
+```
+
 First, add your printer configuration (ip, serial-number, access-code):
 ```bash
 bambu add 192.168.1.100 01ABCD123456789 12345678 --name myP1S
