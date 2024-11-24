@@ -19,7 +19,7 @@ bambu = "cli:main"
 
 
 [tool.pdm]
-distribution = false
+distribution = true
 
 [tool.pdm.version]
 source = "scm"
