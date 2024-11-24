@@ -38,7 +38,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: {context}/docker/Dockerfile
+          file: docker/Dockerfile
           push: true
           build-args: |
             VERSION=${{ steps.version.outputs.VERSION }}
