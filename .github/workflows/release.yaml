@@ -21,4 +21,6 @@ jobs:
         run: pdm install
         
       - name: Build package and Publish to PyPI
+        env:
+          PDM_BUILD_SCM_VERSION: ${{ github.event.release.tag_name }}
         run: pdm publish
