@@ -1,4 +1,5 @@
 
+from typing import Optional
 import uuid
 from bambucli.bambu.messages.getversion import GetVersionMessage
 from bambucli.bambu.messages.onpushstatus import OnPushStatusMessage
@@ -83,7 +84,7 @@ class MqttClient:
     def _publish(self, message):
         return self._client.publish(self._request_topic, message)
 
-    def print(self, file):
+    def print(self, file: str, ams_mappings: Optional[list[int]] = None):
         self._publish(json.dumps(
             {
                 "print": {
@@ -103,8 +104,8 @@ class MqttClient:
                     "flow_cali": False,
                     "vibration_cali": False,
                     "layer_inspect": False,
-                    "ams_mapping": "",
-                    "use_ams": False
+                    "ams_mapping": ams_mappings if ams_mappings is not None else "",
+                    "use_ams": ams_mappings is not None,
                 }
             }
         ))
