@@ -1,7 +1,6 @@
 import logging
 from bambucli.bambu.messages.onpushstatus import PrintErrorCode
 from bambucli.bambu.mqttclient import MqttClient
-from bambucli.bambu.printer import LocalPrinter
 from bambucli.config import get_printer
 from sshkeyboard import listen_keyboard, stop_listening
 import enlighten
@@ -32,7 +31,10 @@ def print_file(args):
 
     def on_connect(client, reason_code):
         status_bar.update(status='Connected')
-        client.print(args.file)
+        client.print(
+            file=args.file,
+            ams_mappings=args.ams
+        )
 
     def on_push_status(client, status):
         stop = False
