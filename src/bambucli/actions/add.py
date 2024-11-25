@@ -1,4 +1,5 @@
 import logging
+from bambucli.bambu.mqttclient import MqttClient
 from bambucli.bambu.printer import LocalPrinter
 from bambucli.config import add_printer as add_printer_to_config
 
@@ -16,23 +17,36 @@ def add_printer(args) -> bool:
             - serial: Printer serial number
             - name: Optional friendly name
 
-    Returns:
-        bool: True if successful, False otherwise
     """
-    try:
-        # Validate required args
-        required = ['ip', 'access_code', 'serial']
-        if not all(hasattr(args, attr) for attr in required):
-            logging.error("Missing required parameters")
-            return False
+    # Validate required args
+    required = ['ip', 'access_code', 'serial']
+    if not all(hasattr(args, attr) for attr in required):
+        logging.error("Missing required parameters")
+        return
 
-        return add_printer_to_config(LocalPrinter(
-            ip_address=args.ip,
-            access_code=args.access_code,
-            serial_number=args.serial,
-            name=args.name
-        ))
+    def on_connect(client, reason_code):
+        client.get_version_info()
 
-    except Exception as e:
-        logger.error(f"Failed to save printer configuration: {e}")
-        return False
+    def on_get_version(client, message):
+        try:
+            add_printer_to_config(LocalPrinter(
+                ip_address=args.ip,
+                access_code=args.access_code,
+                serial_number=args.serial,
+                model=message.get_printer_model(),
+                name=args.name
+            ))
+        except Exception as e:
+            logger.error(f"Failed to save printer configuration: {e}")
+
+        client.disconnect()
+
+    bambuMqttClient = MqttClient.for_local_printer(
+        ip_address=args.ip,
+        serial_number=args.serial,
+        access_code=args.access_code,
+        on_connect=on_connect,
+        on_get_version=on_get_version)
+
+    bambuMqttClient.connect()
+    bambuMqttClient.loop_forever()

@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import List, Optional
 
+from bambucli.bambu.printer import PrinterModel
+
 
 @dataclass
 class ModuleInfo:
@@ -43,3 +45,15 @@ class GetVersionMessage:
             result=json_payload.get('result'),
             reason=json_payload.get('reason')
         )
+
+    def get_printer_model(self) -> PrinterModel:
+        for module in self.module:
+            if module.name == 'mc':
+                match module.project_name:
+                    case "N1":
+                        return PrinterModel.A1
+                    case "P1":
+                        return PrinterModel.P1
+                    case _:
+                        return PrinterModel.UNKNOWN
+        return PrinterModel.UNKNOWN
