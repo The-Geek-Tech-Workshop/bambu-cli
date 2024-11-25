@@ -1,7 +1,8 @@
 from dataclasses import dataclass
+from abc import ABC
 
 
-class Printer():
+class Printer(ABC):
     pass
 
 

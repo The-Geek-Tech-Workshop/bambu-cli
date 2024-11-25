@@ -1,6 +1,6 @@
 import logging
 from bambucli.bambu.messages.onpushstatus import PrintErrorCode
-from bambucli.bambu.mqttclient import MqttClient
+from bambucli.bambu.mqttclient import MqttClient, PrintSpeed
 from bambucli.bambu.printer import LocalPrinter
 from bambucli.config import get_printer
 from sshkeyboard import listen_keyboard, stop_listening
@@ -30,13 +30,7 @@ def print_file(args):
         justify=enlighten.Justify.CENTER,
     )
 
-    def on_connect(client, reason_code):
-        status_bar.update(status='Connected')
-        client.print(args.file)
-
-    def on_push_status(client, status):
-        stop = False
-
+    def update_status_bar(status):
         if (status.gcode_file is not None):
             status_bar.update(file=status.gcode_file)
         if (status.mc_remaining_time is not None):
@@ -47,6 +41,22 @@ def print_file(args):
             status_bar.update(current_layer=status.layer_num)
         if (status.gcode_state is not None):
             status_bar.update(status=status.gcode_state)
+
+    def on_connect(client, reason_code):
+        status_bar.update(status='Connected')
+        client.request_full_status()
+        client.print(args.file)
+
+    def on_full_push_status(client, status):
+        update_status_bar(status)
+
+    def on_push_status(client, status):
+
+        update_status_bar(status)
+
+        stop = False
+
+        if (status.gcode_state is not None):
             if (status.gcode_state == 'FINISH'):
                 logger.info('Print finished')
                 print('Done')
@@ -69,7 +79,8 @@ def print_file(args):
             stop_listening()
 
     bambuMqttClient = MqttClient.for_printer(
-        printer, on_connect, on_push_status)
+        printer,
+        on_connect=on_connect, on_push_status=on_push_status, on_full_push_status=on_full_push_status)
 
     bambuMqttClient.connect()
     bambuMqttClient.loop_start()

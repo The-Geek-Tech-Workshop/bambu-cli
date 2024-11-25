@@ -1,4 +1,5 @@
 
+from enum import Enum
 import uuid
 from bambucli.bambu.messages.getversion import GetVersionMessage
 from bambucli.bambu.messages.onpushstatus import OnPushStatusMessage
@@ -16,21 +17,28 @@ BAMBU_LOCAL_MQTT_USERNAME = 'bblp'
 CLIENT_ID = f'bambu-cli-{str(uuid.uuid4())}'
 
 
+class PrintSpeed(Enum):
+    SILENT = 1
+    STANDARD = 2
+    SPORT = 3
+    LUDICROUS = 4
+
+
 class MqttClient:
 
-    def for_printer(printer: Printer, on_connect=None, on_push_status=None, on_get_version=None):
+    def for_printer(printer: Printer, on_connect=None, on_push_status=None, on_full_push_status=None, on_get_version=None):
         if isinstance(printer, LocalPrinter):
-            return MqttClient.for_local_printer(printer.ip_address, printer.serial_number, printer.access_code, on_connect, on_push_status, on_get_version)
+            return MqttClient.for_local_printer(printer.ip_address, printer.serial_number, printer.access_code, on_connect, on_push_status, on_full_push_status, on_get_version)
 
-    def for_local_printer(ip_address: str, serial_number: str, access_code: str, on_connect=None, on_push_status=None, on_get_version=None):
+    def for_local_printer(ip_address: str, serial_number: str, access_code: str, on_connect=None, on_push_status=None, on_full_push_status=None, on_get_version=None):
         mqttClient = mqtt.Client(
             callback_api_version=CallbackAPIVersion.VERSION2, protocol=mqtt.MQTTv311, clean_session=True, client_id=CLIENT_ID)
         mqttClient.username_pw_set(BAMBU_LOCAL_MQTT_USERNAME, access_code)
         mqttClient.tls_set(cert_reqs=ssl.CERT_NONE)
         mqttClient.tls_insecure_set(True)
-        return MqttClient(mqttClient, serial_number, ip_address, BAMBU_LOCAL_MQTT_PORT, on_connect, on_push_status, on_get_version)
+        return MqttClient(mqttClient, serial_number, ip_address, BAMBU_LOCAL_MQTT_PORT, on_connect, on_push_status, on_full_push_status, on_get_version)
 
-    def __init__(self, client, serial_number, ip_address, port, on_connect=None, on_push_status=None, on_get_version=None):
+    def __init__(self, client, serial_number, ip_address, port, on_connect=None, on_push_status=None, on_full_push_status=None, on_get_version=None):
         client.on_connect = lambda _, userdata, flags, reason_code, properties: self._on_connect(
             userdata, flags, reason_code, properties)
         client.on_message = lambda client, userdata, message: self._on_message(
@@ -41,6 +49,7 @@ class MqttClient:
         self.connect = lambda: self._connect(ip_address, port)
         self._custom_on_connect = on_connect
         self._on_push_status = on_push_status
+        self._on_full_push_status = on_full_push_status
         self._on_get_version = on_get_version
 
     def _connect(self, ip_address, port):
@@ -60,9 +69,13 @@ class MqttClient:
 
         match message["command"]:
             case "push_status":
-                if self._on_push_status:
-                    self._on_push_status(
-                        self, OnPushStatusMessage.from_json(message))
+                if self._on_push_status or self._on_full_push_status:
+                    push_status_message = OnPushStatusMessage.from_json(
+                        message)
+                    if push_status_message.is_full_status() and self._on_full_push_status:
+                        self._on_full_push_status(self, push_status_message)
+                    elif not push_status_message.is_full_status() and self._on_push_status:
+                        self._on_push_status(self, push_status_message)
             case "get_version":
                 if self._on_get_version:
                     self._on_get_version(
@@ -82,6 +95,18 @@ class MqttClient:
 
     def _publish(self, message):
         return self._client.publish(self._request_topic, message)
+
+    def request_full_status(self):
+        self._publish(json.dumps(
+            {
+                "pushing": {
+                    "sequence_id": "0",
+                    "command": "pushall",
+                    "version": 1,
+                    "push_target": 1
+                }
+            }
+        ))
 
     def print(self, file):
         self._publish(json.dumps(
@@ -151,3 +176,13 @@ class MqttClient:
                 }
             }
         ))
+
+    # Doesn't appear to work for P1
+    def set_print_speed(self, speed: PrintSpeed):
+        return self._publish(json.dumps({
+            "print": {
+                "sequence_id": "0",
+                "command": "print_speed",
+                "param": speed.value
+            }
+        }))
