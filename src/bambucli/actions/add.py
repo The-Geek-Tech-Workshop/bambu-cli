@@ -1,10 +1,8 @@
 import logging
-from time import sleep
 from bambucli.bambu.mqttclient import MqttClient
 from bambucli.bambu.printer import LocalPrinter
 from bambucli.config import add_printer as add_printer_to_config
 from bambucli.spinner import Spinner
-from rich.console import Console
 
 logger = logging.getLogger(__name__)
 
