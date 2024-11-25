@@ -1,4 +1,4 @@
-from bambucli.bambu.printer import LocalPrinter, Printer
+from bambucli.bambu.printer import LocalPrinter, Printer, PrinterModel
 import json
 from pathlib import Path
 import logging
@@ -22,37 +22,27 @@ def get_printer(name: str) -> Optional[Printer]:
             return None
 
         printer_config = config[name]
-        return LocalPrinter(
+
+        printer_model = PrinterModel(printer_config.get(
+            'model', PrinterModel.UNKNOWN.value))
+
+        printer = LocalPrinter(
             ip_address=printer_config['ip_address'],
             access_code=printer_config['access_code'],
             serial_number=printer_config['serial_number'],
+            model=printer_model,
             name=name
         )
+
+        # If printer pre-dates model field, update with unknown
+        if 'model' not in printer_config:
+            add_printer(printer)
+
+        return printer
 
     except Exception as e:
         logging.error(f"Failed to load printer configuration: {e}")
         return None
-
-
-def get_all_printers() -> Dict[str, Printer]:
-    """Read all printer configurations from JSON file."""
-    try:
-        config_file = Path.home() / '.bambu-cli' / 'printers.json'
-
-        if not config_file.exists():
-            return {}
-
-        with open(config_file, 'r') as f:
-            config = json.load(f)
-
-        return {
-            serial: LocalPrinter(**printer_config)
-            for serial, printer_config in config.items()
-        }
-
-    except Exception as e:
-        logging.error(f"Failed to load printer configurations: {e}")
-        return {}
 
 
 def add_printer(printer: Printer) -> bool:
@@ -73,7 +63,8 @@ def add_printer(printer: Printer) -> bool:
         printer_config = {
             'ip_address': printer.ip_address,
             'access_code': printer.access_code,
-            'serial_number': printer.serial_number
+            'serial_number': printer.serial_number,
+            'model': printer.model.value
         }
 
         # Update config
