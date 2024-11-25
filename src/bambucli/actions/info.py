@@ -2,30 +2,33 @@ from bambucli.bambu.mqttclient import MqttClient
 from bambucli.config import get_printer
 import logging
 
+from bambucli.spinner import Spinner
+
 logger = logging.getLogger(__name__)
 
 
 def get_version_info(args):
     printer = get_printer(args.printer)
 
-    def on_connect(client, reason_code):
-        client.get_version_info()
+    with Spinner() as spinner:
 
-    def on_get_version(client, message):
+        def on_connect(client, reason_code):
+            spinner.task_complete()
+            spinner.task_in_progress("Getting version info")
+            client.get_version_info()
 
-        p1_series_identifier = next(filter(
-            lambda x: x.name == 'esp32', message.module), None)
-        if p1_series_identifier:
-            print(f"Model: P1 Series")
-            print(f"Serial: {p1_series_identifier.sn}")
-            print(f"Hardware version: {p1_series_identifier.hw_ver}")
+        def on_get_version(client, message):
+            spinner.task_complete()
 
-        client.disconnect()
+            print(f"Model: {message.printer_model().value}")
 
-    bambuMqttClient = MqttClient.for_printer(
-        printer,
-        on_connect=on_connect,
-        on_get_version=on_get_version)
+            client.disconnect()
 
-    bambuMqttClient.connect()
-    bambuMqttClient.loop_forever()
+        bambuMqttClient = MqttClient.for_printer(
+            printer,
+            on_connect=on_connect,
+            on_get_version=on_get_version)
+
+        spinner.task_in_progress(f"Connecting to printer {printer.id()}")
+        bambuMqttClient.connect()
+        bambuMqttClient.loop_forever()
