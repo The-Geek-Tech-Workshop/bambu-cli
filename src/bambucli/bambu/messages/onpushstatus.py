@@ -6,6 +6,18 @@ from typing import List, Dict, Optional
 logger = logging.getLogger(__name__)
 
 
+def safe_int(value) -> Optional[int]:
+    return int(value) if value is not None else None
+
+
+def safe_float(value) -> Optional[float]:
+    return float(value) if value is not None else None
+
+
+def safe_bool(value) -> Optional[bool]:
+    return bool(value) if value is not None else None
+
+
 @dataclass
 class IpcamConfig:
     ipcam_dev: str
@@ -82,7 +94,7 @@ class TrayInfo:
             drying_time=json_payload.get('drying_time'),
             nozzle_temp_max=json_payload.get('nozzle_temp_max'),
             nozzle_temp_min=json_payload.get('nozzle_temp_min'),
-            remain=int(json_payload.get('remain')),
+            remain=safe_int(json_payload.get('remain')),
             tag_uid=json_payload.get('tag_uid'),
             tray_color=json_payload.get('tray_color'),
             tray_diameter=json_payload.get('tray_diameter'),
@@ -213,15 +225,6 @@ class OnPushStatusMessage:
 
     @staticmethod
     def from_json(json_payload: dict) -> 'OnPushStatusMessage':
-        def safe_int(value) -> Optional[int]:
-            return int(value) if value is not None else None
-
-        def safe_float(value) -> Optional[float]:
-            return float(value) if value is not None else None
-
-        def safe_bool(value) -> Optional[bool]:
-            return bool(value) if value is not None else None
-
         def get_print_error(value) -> Optional[PrintErrorCode]:
             if value is None or value == 0:
                 return None

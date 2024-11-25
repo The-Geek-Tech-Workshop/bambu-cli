@@ -163,3 +163,5 @@ cython_debug/
 
 *.3mf
 *.gcode
+
+.DS_Store
