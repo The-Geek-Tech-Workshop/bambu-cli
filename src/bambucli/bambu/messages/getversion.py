@@ -46,7 +46,7 @@ class GetVersionMessage:
             reason=json_payload.get('reason')
         )
 
-    def get_printer_model(self) -> PrinterModel:
+    def printer_model(self) -> PrinterModel:
         for module in self.module:
             if module.name == 'mc':
                 match module.project_name:
