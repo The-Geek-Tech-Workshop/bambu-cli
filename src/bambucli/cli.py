@@ -43,7 +43,7 @@ def main():
     print_parser.add_argument('printer', type=str, help='The printer to use')
     print_parser.add_argument('file', type=str, help='The file to print')
     print_parser.add_argument(
-        '--ams', type=int, nargs='+', help='The AMS filament mappings')
+        '--ams', type=str, nargs='+', help='The AMS filament mappings')
     print_parser.set_defaults(action=print_file)
 
     upload_parser = subparsers.add_parser('upload', help='Upload a file')
