@@ -1,13 +1,13 @@
 import logging
 from bambucli.bambu.mqttclient import MqttClient
-from bambucli.bambu.printer import LocalPrinter
+from bambucli.bambu.printer import Printer
 from bambucli.config import add_printer as add_printer_to_config
 from bambucli.spinner import Spinner
 
 logger = logging.getLogger(__name__)
 
 
-def add_printer(args) -> bool:
+def add_local_printer(args) -> bool:
     """
     Save printer configuration to JSON file.
 
@@ -36,12 +36,13 @@ def add_printer(args) -> bool:
             spinner.task_complete()
             spinner.task_in_progress("Saving printer config")
             try:
-                add_printer_to_config(LocalPrinter(
+                add_printer_to_config(Printer(
                     ip_address=args.ip,
                     access_code=args.access_code,
                     serial_number=args.serial,
                     model=message.printer_model(),
-                    name=args.name
+                    name=args.name,
+                    account_email=None
                 ))
                 spinner.task_complete()
 
@@ -58,6 +59,6 @@ def add_printer(args) -> bool:
             on_connect=on_connect,
             on_get_version=on_get_version)
 
-        spinner.task_in_progress(f"Connecting to printer {printer.id()}")
+        spinner.task_in_progress(f"Connecting to printer)")
         bambuMqttClient.connect()
         bambuMqttClient.loop_forever()

@@ -1,31 +1,18 @@
-import json
-import requests
-
-BAMBU_LOGIN_HOST = "api.bambulab.com"
+from bambucli.bambu.account import Account
+from bambucli.bambu.httpclient import HttpClient
+from bambucli.config import add_cloud_account
 
 
 def login(args):
-    # Can't do this as have been blocked :/
-    # response = requests.post(
-    #     f"https://{BAMBU_LOGIN_HOST}/v1/user-service/user/login",
-    #     headers={'Content-Type': 'application/json'},
-    #     data=json.dumps({
-    #         "account": args.email,
-    #         "password": args.password,
-    #     }))
-    # access_token = response.json().get('access_token')
-    # refresh_token = response.json().get('refresh_token')
 
-    refresh_token = args.refresh_token
-    response = requests.post(
-        f"https://{BAMBU_LOGIN_HOST}/v1/user-service/user/refreshtoken",
-        headers={'Content-Type': 'application/json'},
-        data=json.dumps({
-            "refreshToken": refresh_token,
-        }))
-    print(response.status_code)
-    print(response.json())
-    access_token = response.json().get('access_token')
-    new_refresh_token = response.json().get('refresh_token')
-    print(f"Access token: {access_token}")
-    print(f"Refresh token: {new_refresh_token}")
+    email = args.email
+    password = args.password if args.password else input("Password: ")
+
+    client = HttpClient()
+    access_token, refresh_token = client.get_auth_tokens(
+        email, password)
+
+    user_id = client.get_projects(access_token)[0].user_id
+
+    add_cloud_account(
+        Account(args.email, access_token, refresh_token, user_id))

@@ -48,12 +48,6 @@ class GetVersionMessage:
 
     def printer_model(self) -> PrinterModel:
         for module in self.module:
-            if module.name == 'mc':
-                match module.project_name:
-                    case "N1":
-                        return PrinterModel.A1
-                    case "P1":
-                        return PrinterModel.P1
-                    case _:
-                        return PrinterModel.UNKNOWN
+            if module.name == 'ota':
+                return PrinterModel.from_model_code(module.project_name)
         return PrinterModel.UNKNOWN

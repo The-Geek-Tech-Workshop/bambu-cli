@@ -12,8 +12,10 @@ dependencies = [
     "ftputil>=5.1.0",
     "enlighten>=1.12.4",
     "sshkeyboard>=2.3.1",
-    "requests>=2.32.3",
     "rich>=13.9.4",
+    "cloudscraper>=1.2.71",
+    "certifi>=2024.8.30",
+    "ngrok>=1.4.0",
 ]
 requires-python = "==3.12.*"
 readme = "README.md"
@@ -33,6 +35,7 @@ tag_regex = "v(.+)"
 [tool.pdm.options]
 add = ["--no-self"]
 install = ["--no-self"]
+remove = ["--no-self"]
 
 [tool.pdm.scripts]
 _.working_dir = "src"

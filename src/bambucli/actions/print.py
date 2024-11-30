@@ -1,99 +1,29 @@
+import asyncio
 import logging
 from bambucli.bambu.messages.onpushstatus import PrintErrorCode
 from bambucli.bambu.mqttclient import MqttClient
-from bambucli.config import get_printer
+from bambucli.config import get_ngrok_auth_token, get_printer
+from bambucli.fileserver import FileServer
+from bambucli.printermonitor import printer_monitor
 from sshkeyboard import listen_keyboard, stop_listening
 import enlighten
-
-logger = logging.getLogger(__name__)
-
-STATUS_FORMAT = 'Status: {status} | File: {file} | Time Remaining: {minutes_remaining}mins ({percentage_done}%) | Layer: {current_layer}'
 
 
 def print_file(args):
 
     printer = get_printer(args.printer)
+    if printer is None:
+        print(f"Printer '{args.printer}' not found")
+        return
 
-    manager = enlighten.get_manager()
-    manager.status_bar(
-        status_format='Press "c" to cancel, "p" to pause, "r" to resume, "q" to quit',
-        justify=enlighten.Justify.CENTER,
-    )
-    status_bar = manager.status_bar(
-        status='Connecting',
-        file='n/a',
-        minutes_remaining='?',
-        percentage_done='0',
-        current_layer='0',
-        status_format=STATUS_FORMAT,
-        justify=enlighten.Justify.CENTER,
-    )
+    ngrok_auth_token = get_ngrok_auth_token()
+
+    file_server = FileServer() if ngrok_auth_token else None
+    http_server = file_server.serve(ngrok_auth_token) if file_server else None
 
     def on_connect(client, reason_code):
-        status_bar.update(status='Connected')
-        client.print(
-            file=args.file,
-            ams_mappings=args.ams
-        )
+        client.print(args.file, ams_mappings=args.ams, http_server=http_server)
 
-    def on_push_status(client, status):
-        stop = False
+    printer_monitor(printer, on_connect=on_connect)
 
-        if (status.gcode_file is not None):
-            status_bar.update(file=status.gcode_file)
-        if (status.mc_remaining_time is not None):
-            status_bar.update(minutes_remaining=status.mc_remaining_time)
-        if (status.mc_percent is not None):
-            status_bar.update(percentage_done=status.mc_percent)
-        if (status.layer_num is not None):
-            status_bar.update(current_layer=status.layer_num)
-        if (status.gcode_state is not None):
-            status_bar.update(status=status.gcode_state)
-            if (status.gcode_state == 'FINISH'):
-                logger.info('Print finished')
-                print('Done')
-                stop = True
-
-        if status.print_error is not None:
-            match status.print_error:
-                case PrintErrorCode.CANCELLED:
-                    logger.info('Print cancelled')
-                    print('Cancelled')
-                case PrintErrorCode.FILE_NOT_FOUND:
-                    logger.info('File not found')
-                    print('File not found')
-                case _:
-                    logger.info('Print failed')
-                    print('Failed')
-            stop = True
-
-        if stop:
-            stop_listening()
-
-    bambuMqttClient = MqttClient.for_printer(
-        printer, on_connect, on_push_status)
-
-    bambuMqttClient.connect()
-    bambuMqttClient.loop_start()
-
-    def on_press(key):
-        match key:
-            case 'c':
-                logger.info('Cancelling print')
-                bambuMqttClient.stop_print()
-            case 'q':
-                logger.info('Quitting')
-                stop_listening()
-            case 'p':
-                logger.info('Pausing')
-                bambuMqttClient.pause_print()
-            case 'r':
-                logger.info('Resuming')
-                bambuMqttClient.resume_print()
-
-    listen_keyboard(
-        on_press=on_press
-    )
-
-    bambuMqttClient.loop_stop()
-    bambuMqttClient.disconnect()
+    asyncio.run(file_server.shutdown()) if file_server else None
