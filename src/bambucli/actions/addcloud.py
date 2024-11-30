@@ -26,7 +26,7 @@ def add_cloud_printer(args):
             access_code=printers[selection - 1].access_code,
             model=printers[selection - 1].model,
             account_email=account.email,
-            ip_address=args.ip_address
+            ip_address=None
         ))
     except ValueError:
         print("Invalid selection")
