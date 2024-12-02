@@ -18,26 +18,19 @@ def upload_file(args) -> bool:
     printer = get_printer(args.printer)
     if not printer:
         print(f"Printer {args.printer} not found in config")
-        return False
+        return
 
     ftps = FtpClient(printer.ip_address, printer.access_code)
 
-    with Spinner() as spinner:
+    spinner = Spinner()
+    spinner.task_in_progress(f"Connecting to printer {
+                             printer.id()}", lambda: ftps.connect())
+    spinner.task_in_progress(
+        f"Uploading file {args.file}", lambda: ftps.upload_file(args.file))
 
-        spinner.task_in_progress(f"Connecting to printer {printer.id()}")
-        ftps.connect()
-        spinner.task_complete()
-        spinner.task_in_progress(f"Uploading file {args.file}")
-        success = ftps.upload_file(args.file)
+    try:
+        ftps.quit()
+    except:
+        pass
 
-        try:
-            ftps.quit()
-        except:
-            pass
-
-        if success:
-            spinner.task_complete()
-        else:
-            spinner.task_failed()
-
-        return success
+    return

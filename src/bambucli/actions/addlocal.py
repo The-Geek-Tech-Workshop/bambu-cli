@@ -25,33 +25,35 @@ def add_local_printer(args) -> bool:
         logging.error("Missing required parameters")
         return
 
-    with Spinner() as spinner:
+    spinner = Spinner()
 
-        def on_connect(client, reason_code):
+    def on_connect(client, reason_code):
+        spinner.task_complete()
+        spinner.task_in_progress("Retrieving printer information")
+        client.get_version_info()
+
+    def on_get_version(client, message):
+        spinner.task_complete()
+        spinner.task_in_progress("Saving printer config")
+        try:
+            add_printer_to_config(Printer(
+                ip_address=args.ip,
+                access_code=args.access_code,
+                serial_number=args.serial,
+                model=message.printer_model(),
+                name=args.name,
+                account_email=None
+            ))
             spinner.task_complete()
-            spinner.task_in_progress("Retrieving printer information")
-            client.get_version_info()
 
-        def on_get_version(client, message):
-            spinner.task_complete()
-            spinner.task_in_progress("Saving printer config")
-            try:
-                add_printer_to_config(Printer(
-                    ip_address=args.ip,
-                    access_code=args.access_code,
-                    serial_number=args.serial,
-                    model=message.printer_model(),
-                    name=args.name,
-                    account_email=None
-                ))
-                spinner.task_complete()
+        except Exception as e:
+            logger.error(e)
+            spinner.task_failed()
 
-            except Exception as e:
-                logger.error(f"Failed to save printer configuration: {e}")
-                spinner.task_failed()
+        client.disconnect()
 
-            client.disconnect()
-
+    spinner.task_in_progress(f"Connecting to printer")
+    try:
         bambuMqttClient = MqttClient.for_local_printer(
             ip_address=args.ip,
             serial_number=args.serial,
@@ -59,6 +61,9 @@ def add_local_printer(args) -> bool:
             on_connect=on_connect,
             on_get_version=on_get_version)
 
-        spinner.task_in_progress(f"Connecting to printer)")
         bambuMqttClient.connect()
         bambuMqttClient.loop_forever()
+    except Exception as e:
+        logging.error(e)
+        spinner.task_failed(e)
+        return False

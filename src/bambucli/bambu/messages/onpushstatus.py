@@ -199,6 +199,7 @@ class OnPushStatusMessage:
     mc_print_stage: str
     mc_print_sub_stage: int
     mc_remaining_time: int
+    msg: int
     nozzle_diameter: str
     nozzle_target_temper: float
     nozzle_temper: float
@@ -222,6 +223,9 @@ class OnPushStatusMessage:
     wifi_signal: str
     xcam: XcamConfig
     xcam_status: str
+
+    def isFullStatus(self) -> bool:
+        return self.msg == 0
 
     @staticmethod
     def from_json(json_payload: dict) -> 'OnPushStatusMessage':
@@ -272,6 +276,7 @@ class OnPushStatusMessage:
             mc_print_sub_stage=safe_int(
                 json_payload.get('mc_print_sub_stage')),
             mc_remaining_time=safe_int(json_payload.get('mc_remaining_time')),
+            msg=safe_int(json_payload.get('msg')),
             nozzle_diameter=json_payload.get('nozzle_diameter'),
             nozzle_target_temper=safe_float(
                 json_payload.get('nozzle_target_temper')),

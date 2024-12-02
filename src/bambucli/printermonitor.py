@@ -26,16 +26,7 @@ def printer_monitor(printer, on_connect=lambda client, response_code: False, on_
         justify=enlighten.Justify.CENTER,
     )
 
-    def _on_connect(client, reason_code):
-        status_bar.update(status='Connected')
-        client.request_full_status()
-        stop = on_connect(client, reason_code)
-        if stop:
-            stop_listening()
-
-    def _on_push_status(client, status):
-        stop = on_push_status(client, status)
-
+    def update_status(status):
         if (status.gcode_file is not None):
             status_bar.update(file=status.gcode_file)
         if (status.mc_remaining_time is not None):
@@ -48,10 +39,26 @@ def printer_monitor(printer, on_connect=lambda client, response_code: False, on_
             status_bar.update(total_layers=status.total_layer_num)
         if (status.gcode_state is not None):
             status_bar.update(status=status.gcode_state)
-            if (status.gcode_state == 'FINISH'):
-                logger.info('Print finished')
-                print('Done')
-                stop = True
+
+    def _on_connect(client, reason_code):
+        status_bar.update(status='Connected')
+        client.request_full_status()
+        stop = on_connect(client, reason_code)
+        if stop:
+            stop_listening()
+
+    def _on_push_full_status(client, status):
+        update_status(status)
+
+    def _on_push_status(client, status):
+        stop = on_push_status(client, status)
+
+        update_status(status)
+
+        if (status.gcode_state == 'FINISH'):
+            logger.info('Print finished')
+            print('Done')
+            stop = True
 
         if status.print_error is not None:
             match status.print_error:
@@ -70,7 +77,7 @@ def printer_monitor(printer, on_connect=lambda client, response_code: False, on_
             stop_listening()
 
     bambuMqttClient = MqttClient.for_printer(
-        printer, _on_connect, _on_push_status)
+        printer, _on_connect, _on_push_status, _on_push_full_status)
 
     bambuMqttClient.connect()
     bambuMqttClient.loop_start()
