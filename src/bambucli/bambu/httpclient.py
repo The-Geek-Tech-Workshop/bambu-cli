@@ -1,10 +1,13 @@
 
+from abc import ABC
+from enum import Enum
 import json
 from bambucli.bambu.printer import Printer, PrinterModel
 from bambucli.bambu.project import Project
 import cloudscraper
 import certifi
 from requests.exceptions import HTTPError
+from dataclasses import dataclass
 
 # Many thanks to https://github.com/t0nyz0/bambu-auth/blob/main/auth.py for working this out :)
 
@@ -26,128 +29,113 @@ headers = {
 }
 
 
+class LOGIN_STATUS(ABC):
+    pass
+
+
+@dataclass
+class LOGIN_SUCCESS(LOGIN_STATUS):
+    access_token: str
+    refresh_token: str
+
+
+@dataclass
+class LOGIN_VERIFICATION_CODE_REQUIRED(LOGIN_STATUS):
+    pass
+
+
+@dataclass
+class LOGIN_MFA_REQUIRED(LOGIN_STATUS):
+    tfa_key: str
+
+
 class HttpClient:
     def __init__(self):
         self._client = cloudscraper.create_scraper(
             browser={'custom': 'chrome'})
 
-    def get_auth_tokens(self, email, password):
+    def login_with_email_and_password(self, email, password) -> LOGIN_STATUS:
         auth_payload = {
             "account": email,
             "password": password,
             "apiError": ""
         }
 
-        try:
-            auth_response = self._client.post(
-                f"https://{BAMBU_LOGIN_HOST}/v1/user-service/user/login",
-                headers=headers,
-                json=auth_payload,
-                verify=certifi.where()
+        auth_response = self._client.post(
+            f"https://{BAMBU_LOGIN_HOST}/v1/user-service/user/login",
+            headers=headers,
+            json=auth_payload,
+            verify=certifi.where()
+        )
+        auth_response.raise_for_status()
+        if auth_response.text.strip() == "":
+            raise ValueError(
+                "Empty response from server, possible Cloudflare block.")
+        auth_json = auth_response.json()
+
+        # If login is successful
+        if auth_json.get("success"):
+            return LOGIN_SUCCESS(
+                access_token=auth_json.get("accessToken"),
+                refresh_token=auth_json.get("refreshToken")
             )
-            auth_response.raise_for_status()
-            if auth_response.text.strip() == "":
-                raise ValueError(
-                    "Empty response from server, possible Cloudflare block.")
-            auth_json = auth_response.json()
 
-            # If login is successful
-            if auth_json.get("success"):
-                return auth_json.get("accessToken"), auth_json.get("refreshToken")
+        # Handle additional authentication scenarios
+        login_type = auth_json.get("loginType")
+        if login_type == "verifyCode":
+            return LOGIN_VERIFICATION_CODE_REQUIRED()
+        elif login_type == "tfa":
+            return LOGIN_MFA_REQUIRED(tfa_key=auth_json.get("tfaKey"))
+        else:
+            raise ValueError(f"Unknown login type: {login_type}")
 
-            # Handle additional authentication scenarios
-            login_type = auth_json.get("loginType")
-            if login_type == "verifyCode":
-                return self._handle_verification_code(email)
-            elif login_type == "tfa":
-                return self._handle_mfa(auth_json.get("tfaKey"))
-            else:
-                raise ValueError(f"Unknown login type: {login_type}")
+    def request_verification_code(self, email):
+        send_code_response = self._client.post(
+            f"https://{BAMBU_LOGIN_HOST}/v1/user-service/user/sendemail/code",
+            headers=headers,
+            json={
+                "email": email,
+                "type": "codeLogin"
+            },
+            verify=certifi.where()
+        )
+        send_code_response.raise_for_status()
 
-        except HTTPError as http_err:
-            print(f"HTTP error occurred: {http_err}")
-        except json.JSONDecodeError as json_err:
-            print(f"JSON decode error: {
-                json_err}. Response content: {auth_response.text}")
-        except Exception as err:
-            print(f"Other error occurred: {err}")
-        return None, None
-
-        # print(f"Access token: {access_token}")
-        # print(f"Refresh token: {refresh_token}")
-
-    def _handle_verification_code(self, email):
-        send_code_payload = {
-            "email": email,
-            "type": "codeLogin"
-        }
-
-        try:
-            send_code_response = self._client.post(
-                f"https://{BAMBU_LOGIN_HOST}/v1/user-service/user/sendemail/code",
-                headers=headers,
-                json=send_code_payload,
-                verify=certifi.where()
-            )
-            send_code_response.raise_for_status()
-            print("Verification code sent successfully. Please check your email.")
-            verify_code = input("Enter your access code: ")
-
-            verify_payload = {
+    def login_with_verification_code(self, email, code):
+        verify_response = self._client.post(
+            f"https://{BAMBU_LOGIN_HOST}/v1/user-service/user/login",
+            headers=headers,
+            json={
                 "account": email,
-                "code": verify_code
-            }
-            verify_response = self._client.post(
-                f"https://{BAMBU_LOGIN_HOST}/v1/user-service/user/login",
-                headers=headers,
-                json=verify_payload,
-                verify=certifi.where()
-            )
-            verify_response.raise_for_status()
-            if verify_response.text.strip() == "":
-                raise ValueError(
-                    "Empty response from server during verification, possible Cloudflare block.")
-            json_response = verify_response.json()
-            return json_response.get("accessToken"), json_response.get("refreshToken")
+                "code": code
+            },
+            verify=certifi.where()
+        )
+        verify_response.raise_for_status()
+        if verify_response.text.strip() == "":
+            raise ValueError(
+                "Empty response from server during verification, possible Cloudflare block.")
+        json_response = verify_response.json()
+        return LOGIN_SUCCESS(access_token=json_response.get("accessToken"), refresh_token=json_response.get("refreshToken"))
 
-        except HTTPError as http_err:
-            print(f"HTTP error occurred during verification: {http_err}")
-        except json.JSONDecodeError as json_err:
-            print(f"JSON decode error during verification: {
-                json_err}. Response content: {verify_response.text}")
-        except Exception as err:
-            print(f"Other error occurred during verification: {err}")
-        return None, None
-
-    def _handle_mfa(self, tfa_key):
-        tfa_code = input("Enter your MFA access code: ")
+    def login_with_mfa(self, tfa_key, tfa_code):
         verify_payload = {
             "tfaKey": tfa_key,
             "tfaCode": tfa_code
         }
 
-        try:
-            tfa_response = self._client.post(
-                "https://bambulab.com/api/sign-in/tfa",
-                headers=headers,
-                json=verify_payload,
-                verify=certifi.where()
-            )
-            tfa_response.raise_for_status()
-            if tfa_response.text.strip() == "":
-                raise ValueError(
-                    "Empty response from server during MFA, possible Cloudflare block.")
-            cookies = tfa_response.cookies.get_dict()
-            return cookies.get("token"), cookies.get("refreshToken")
-
-        except HTTPError as http_err:
-            print(f"HTTP error occurred during MFA: {http_err}")
-        except json.JSONDecodeError as json_err:
-            print(f"JSON decode error during MFA: {
-                json_err}. Response content: {tfa_response.text}")
-        except Exception as err:
-            print(f"Other error occurred during MFA: {err}")
-        return None, None
+        tfa_response = self._client.post(
+            "https://bambulab.com/api/sign-in/tfa",
+            headers=headers,
+            json=verify_payload,
+            verify=certifi.where()
+        )
+        tfa_response.raise_for_status()
+        if tfa_response.text.strip() == "":
+            raise ValueError(
+                "Empty response from server during MFA, possible Cloudflare block.")
+        cookies = tfa_response.cookies.get_dict()
+        return LOGIN_SUCCESS(cookies.get("token"), cookies.get("refreshToken"))
 
     def get_projects(self, access_token):
         try:

@@ -15,29 +15,19 @@ class FtpClient:
         ftps.context = ssl._create_unverified_context()
 
         def connect():
-            try:
-                # Connect and login
-                ftps.connect(host=host, port=BAMBU_FTP_PORT)
-                ftps.login(user=BAMBU_FTP_USER, passwd=password)
-                ftps.prot_p()  # Set up secure data connection
-            except Exception as e:
-                print(f"Connection failed: {e}")
+            ftps.connect(host=host, port=BAMBU_FTP_PORT)
+            ftps.login(user=BAMBU_FTP_USER, passwd=password)
+            ftps.prot_p()  # Set up secure data connection
         self.connect = connect
         self._ftps = ftps
 
     def upload_file(self, file):
-        try:
-            local_file = Path(file)
-            if not local_file.exists():
-                print(f"File {file} not found")
-                return False
+        local_file = Path(file)
+        if not local_file.exists():
+            raise Exception(f"File {local_file} not found")
 
-            with open(local_file, 'rb') as f:
-                self._ftps.storbinary(f'STOR {local_file.name}', f)
-            return True
-        except Exception as e:
-            print(f"Upload failed: {e}")
-            return False
+        with open(local_file, 'rb') as f:
+            self._ftps.storbinary(f'STOR {local_file.name}', f)
 
     def quit(self):
         self._ftps.quit()

@@ -1,5 +1,4 @@
 
-from enum import Enum
 from typing import Optional
 import uuid
 from bambucli.bambu.messages.getversion import GetVersionMessage
@@ -22,21 +21,21 @@ CLIENT_ID = f'bambu-cli-{str(uuid.uuid4())}'
 
 class MqttClient:
 
-    def for_printer(printer: Printer, on_connect=None, on_push_status=None, on_get_version=None):
+    def for_printer(printer: Printer, on_connect=None, on_push_status=None, on_push_full_status=None, on_get_version=None):
         if (printer.account_email is None):
-            return MqttClient.for_local_printer(printer.ip_address, printer.serial_number, printer.access_code, on_connect, on_push_status, on_get_version)
+            return MqttClient.for_local_printer(printer.ip_address, printer.serial_number, printer.access_code, on_connect, on_push_status, on_push_full_status, on_get_version)
         else:
-            return MqttClient.for_cloud_printer(printer, on_connect, on_push_status, on_get_version)
+            return MqttClient.for_cloud_printer(printer, on_connect, on_push_status, on_push_full_status, on_get_version)
 
-    def for_local_printer(ip_address: str, serial_number: str, access_code: str, on_connect=None, on_push_status=None, on_get_version=None):
+    def for_local_printer(ip_address: str, serial_number: str, access_code: str, on_connect=None, on_push_status=None, on_push_full_status=None, on_get_version=None):
         mqttClient = mqtt.Client(
             callback_api_version=CallbackAPIVersion.VERSION2, protocol=mqtt.MQTTv311, clean_session=True, client_id=CLIENT_ID)
         mqttClient.username_pw_set(BAMBU_LOCAL_MQTT_USERNAME, access_code)
         mqttClient.tls_set(cert_reqs=ssl.CERT_NONE)
         mqttClient.tls_insecure_set(True)
-        return MqttClient(mqttClient, serial_number, ip_address, BAMBU_LOCAL_MQTT_PORT, on_connect, on_push_status, on_get_version)
+        return MqttClient(mqttClient, serial_number, ip_address, BAMBU_LOCAL_MQTT_PORT, on_connect, on_push_status, on_push_full_status, on_get_version)
 
-    def for_cloud_printer(cloud_printer, on_connect=None, on_push_status=None, on_get_version=None):
+    def for_cloud_printer(cloud_printer, on_connect=None, on_push_status=None, on_push_full_status=None, on_get_version=None):
         account = get_cloud_account(cloud_printer.account_email)
         mqttClient = mqtt.Client(
             callback_api_version=CallbackAPIVersion.VERSION2, protocol=mqtt.MQTTv311, clean_session=True, client_id=CLIENT_ID)
@@ -44,9 +43,9 @@ class MqttClient:
             f"u_{account.user_id}", account.access_token)
         mqttClient.tls_set(cert_reqs=ssl.CERT_NONE)
         mqttClient.tls_insecure_set(True)
-        return MqttClient(mqttClient, cloud_printer.serial_number, 'us.mqtt.bambulab.com', BAMBU_CLOUD_MQTT_PORT, on_connect, on_push_status, on_get_version)
+        return MqttClient(mqttClient, cloud_printer.serial_number, 'us.mqtt.bambulab.com', BAMBU_CLOUD_MQTT_PORT, on_connect, on_push_status, on_push_full_status, on_get_version)
 
-    def __init__(self, client, serial_number, ip_address, port, on_connect=None, on_push_status=None, on_get_version=None):
+    def __init__(self, client, serial_number, ip_address, port, on_connect=None, on_push_status=None, on_push_full_status=None, on_get_version=None):
         client.on_connect = lambda _, userdata, flags, reason_code, properties: self._on_connect(
             userdata, flags, reason_code, properties)
         client.on_message = lambda client, userdata, message: self._on_message(
@@ -57,6 +56,7 @@ class MqttClient:
         self.connect = lambda: self._connect(ip_address, port)
         self._custom_on_connect = on_connect
         self._on_push_status = on_push_status
+        self._on_push_full_status = on_push_full_status
         self._on_get_version = on_get_version
 
     def _connect(self, ip_address, port):
@@ -77,9 +77,14 @@ class MqttClient:
         if message is not None:
             match message.get("command", ""):
                 case "push_status":
-                    if self._on_push_status:
-                        self._on_push_status(
-                            self, OnPushStatusMessage.from_json(message))
+                    if self._on_push_full_status or self._on_push_status:
+                        message = OnPushStatusMessage.from_json(message)
+                        if message.isFullStatus() and self._on_push_full_status:
+                            self._on_push_full_status(
+                                self, message)
+                        elif not message.isFullStatus() and self._on_push_status:
+                            self._on_push_status(
+                                self, message)
                 case "get_version":
                     if self._on_get_version:
                         self._on_get_version(
@@ -101,7 +106,7 @@ class MqttClient:
         return self._client.publish(self._request_topic, message)
 
     def print(self, file: str, ams_mappings: Optional[list[int]] = None, http_server: Optional[str] = None, plate_number: int = 1):
-        self._publish(json.dumps(
+        return self._publish(json.dumps(
             {
                 "print": {
                     "sequence_id": "0",
