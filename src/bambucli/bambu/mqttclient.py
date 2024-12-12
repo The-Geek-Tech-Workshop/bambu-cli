@@ -19,6 +19,12 @@ BAMBU_LOCAL_MQTT_USERNAME = 'bblp'
 CLIENT_ID = f'bambu-cli-{str(uuid.uuid4())}'
 
 
+class ConnectionFailedException(Exception):
+    def __init__(self, reason_code):
+        super().__init__(
+            f"Connection to printer failed with reason code: '{reason_code}'")
+
+
 class MqttClient:
 
     def for_printer(printer: Printer, on_connect=None, on_push_status=None, on_push_full_status=None, on_get_version=None):
@@ -63,10 +69,16 @@ class MqttClient:
         self._client.connect(ip_address, port)
 
     def _on_connect(self, userdata, flags, reason_code, properties):
-        logger.info(f'Connected with result code {str(reason_code)}')
-        self._client.subscribe(self._report_topic)
-        if self._on_connect:
-            self._custom_on_connect(self, reason_code)
+        if (reason_code == 'Success'):
+            logger.info(f'Connected successfully with result code {
+                        str(reason_code)}')
+            self._client.subscribe(self._report_topic)
+            if self._on_connect:
+                self._custom_on_connect(self, reason_code)
+        else:
+            logger.error(f'Connection failed with result code {
+                         str(reason_code)}')
+            raise ConnectionFailedException(reason_code)
 
     def _on_message(self, message):
         logger.info(f'Received message {str(message.payload)}')
