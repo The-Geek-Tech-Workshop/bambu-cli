@@ -6,6 +6,7 @@ from bambucli.ftpsimplicit import ImplicitFTP_TLS
 logger = logging.getLogger(__name__)
 BAMBU_FTP_USER = 'bblp'
 BAMBU_FTP_PORT = 990
+CACHE_DIRECTORY = 'cache/'
 
 
 class FtpClient:
@@ -21,13 +22,16 @@ class FtpClient:
         self.connect = connect
         self._ftps = ftps
 
-    def upload_file(self, file):
-        local_file = Path(file)
+    def upload_file(self, local_path: str | Path, remote_path: str | Path):
+        local_file = local_path if local_path.__class__ == Path else Path(
+            local_path)
+        remote_file = remote_path if remote_path.__class__ == Path else Path(
+            remote_path)
         if not local_file.exists():
             raise Exception(f"File {local_file} not found")
 
-        with open(local_file, 'rb') as f:
-            self._ftps.storbinary(f'STOR {local_file.name}', f)
+        with open(local_file, 'rb') as file_buffer:
+            self._ftps.storbinary(f'STOR {remote_file}', file_buffer)
 
     def quit(self):
         self._ftps.quit()

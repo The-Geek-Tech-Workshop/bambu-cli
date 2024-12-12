@@ -5,7 +5,7 @@
 groups = ["default"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:730391fd8139b4e60916c8feb7afc7070cf7690e13e24dbc5012794593c17ded"
+content_hash = "sha256:d113cac6a76dd1ee871cd53cd16a1c7490d9ebfc4a0585b46c3f1381bfce8df8"
 
 [[metadata.targets]]
 requires_python = "==3.12.*"
@@ -284,6 +284,17 @@ groups = ["default"]
 files = [
     {file = "six-1.16.0-py2.py3-none-any.whl", hash = "sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254"},
     {file = "six-1.16.0.tar.gz", hash = "sha256:1e61c37477a1626458e36f7b1d82aa5c9b094fa4802892072e49de9c60c4c926"},
+]
+
+[[package]]
+name = "ssdp"
+version = "1.3.0"
+requires_python = ">=3.8"
+summary = "Python asyncio library for Simple Service Discovery Protocol (SSDP)."
+groups = ["default"]
+files = [
+    {file = "ssdp-1.3.0-py3-none-any.whl", hash = "sha256:749c28cb6934f44017672676083b80f305f3c27f4c512dcaa1264be862f5d30f"},
+    {file = "ssdp-1.3.0.tar.gz", hash = "sha256:438f1449d0d8f7bd82228cdf8d92c3327edef83b411f28cf23d055d012651491"},
 ]
 
 [[package]]

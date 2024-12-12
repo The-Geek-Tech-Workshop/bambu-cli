@@ -1,3 +1,4 @@
+from bambucli.actions.ensureip import PrinterNotFoundOnNetworkException, ensure_printer_ip_address
 from bambucli.bambu.mqttclient import MqttClient
 from bambucli.config import get_printer
 import logging
@@ -8,31 +9,32 @@ logger = logging.getLogger(__name__)
 
 
 def get_version_info(args):
-    printer = get_printer(args.printer)
-
     spinner = Spinner()
+    spinner.task_in_progress("Fetching printer details")
+    printer = get_printer(args.printer)
+    if printer is None:
+        spinner.task_failed(f"Printer '{args.printer}' not found")
+        return
+    spinner.task_complete()
 
-    def on_connect(client, reason_code):
-        spinner.task_complete()
-        spinner.task_in_progress("Getting version info")
-        client.get_version_info()
+    if printer.ip_address is None:
+        try:
+            spinner.task_in_progress("Checking for printer ip address")
+            printer = ensure_printer_ip_address(printer)
+            spinner.task_complete()
+        except PrinterNotFoundOnNetworkException as e:
+            # Printer not found on network currently, but we'll allow for just this info request
+            spinner.task_complete()
+            pass
+        except Exception as e:
+            spinner.task_failed(e)
+            return
 
-    def on_get_version(client, message):
-        spinner.task_complete()
-
-        print(f"Model: {message.printer_model().value}")
-
-        client.disconnect()
-
-    spinner.task_in_progress(f"Connecting to printer {printer.id()}")
-    try:
-        bambuMqttClient = MqttClient.for_printer(
-            printer,
-            on_connect=on_connect,
-            on_get_version=on_get_version)
-
-        bambuMqttClient.connect()
-        bambuMqttClient.loop_forever()
-    except Exception as e:
-        logger.error(e)
-        spinner.task_failed(e)
+    print(f"Name: {printer.name}")
+    print(f"Model: {printer.model.value}")
+    print(f"Serial Number: {printer.serial_number}")
+    print(f"Access Code: {printer.access_code}")
+    print(f"IP Address: {
+          printer.ip_address if printer.ip_address else 'Unknown'}")
+    print(f"Bambu Account: {
+          printer.account_email if printer.account_email else 'N/A'}")

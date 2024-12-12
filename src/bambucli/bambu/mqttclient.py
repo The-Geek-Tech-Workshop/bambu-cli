@@ -19,13 +19,22 @@ BAMBU_LOCAL_MQTT_USERNAME = 'bblp'
 CLIENT_ID = f'bambu-cli-{str(uuid.uuid4())}'
 
 
+class ConnectionFailedException(Exception):
+    def __init__(self, reason_code):
+        super().__init__(
+            f"Connection to printer failed with reason code: '{reason_code}'")
+
+
 class MqttClient:
 
     def for_printer(printer: Printer, on_connect=None, on_push_status=None, on_push_full_status=None, on_get_version=None):
-        if (printer.account_email is None):
+        if printer.account_email is not None:
+            return MqttClient.for_cloud_printer(printer, on_connect, on_push_status, on_push_full_status, on_get_version)
+        elif (printer.ip_address is not None):
             return MqttClient.for_local_printer(printer.ip_address, printer.serial_number, printer.access_code, on_connect, on_push_status, on_push_full_status, on_get_version)
         else:
-            return MqttClient.for_cloud_printer(printer, on_connect, on_push_status, on_push_full_status, on_get_version)
+            raise Exception(
+                'Printer must have either a known IP-address or an account-email in order to connect to MQTT')
 
     def for_local_printer(ip_address: str, serial_number: str, access_code: str, on_connect=None, on_push_status=None, on_push_full_status=None, on_get_version=None):
         mqttClient = mqtt.Client(
@@ -63,10 +72,16 @@ class MqttClient:
         self._client.connect(ip_address, port)
 
     def _on_connect(self, userdata, flags, reason_code, properties):
-        logger.info(f'Connected with result code {str(reason_code)}')
-        self._client.subscribe(self._report_topic)
-        if self._on_connect:
-            self._custom_on_connect(self, reason_code)
+        if (reason_code == 'Success'):
+            logger.info(f'Connected successfully with result code {
+                        str(reason_code)}')
+            self._client.subscribe(self._report_topic)
+            if self._on_connect:
+                self._custom_on_connect(self, reason_code)
+        else:
+            logger.error(f'Connection failed with result code {
+                         str(reason_code)}')
+            raise ConnectionFailedException(reason_code)
 
     def _on_message(self, message):
         logger.info(f'Received message {str(message.payload)}')
@@ -111,7 +126,7 @@ class MqttClient:
                 "print": {
                     "sequence_id": "0",
                     "command": "project_file",
-                    "param": "Metadata/plate_{plate_number}.gcode",
+                    "param": f"Metadata/plate_{plate_number}.gcode",
                     "project_id": "0",  # Always 0 for local prints
                     "profile_id": "0",  # Always 0 for local prints
                     "task_id": "0",  # Always 0 for local prints
