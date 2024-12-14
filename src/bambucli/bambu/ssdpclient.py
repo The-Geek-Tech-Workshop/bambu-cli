@@ -60,7 +60,7 @@ class SsdpClient():
         except Exception:
             # Ignore the exception, we're just using this to break out of the loop
             pass
-
+          
         transport.close()
         loop.close()
 
