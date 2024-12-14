@@ -1,3 +1,4 @@
+import dataclasses
 import logging
 from bambucli.bambu.mqttclient import MqttClient
 from bambucli.bambu.printer import Printer
@@ -13,7 +14,7 @@ def add_local_printer(args) -> bool:
     spinner = Spinner()
     spinner.task_in_progress("Looking for printers on local network")
     ssdpClient = SsdpClient()
-    printers = ssdpClient.discoverPrinters()
+    printers = ssdpClient.discover_printers()
 
     if len(printers) == 0:
         spinner.task_failed("No printers found")
@@ -44,14 +45,9 @@ def add_local_printer(args) -> bool:
             spinner.task_complete()
             spinner.task_in_progress("Saving printer config")
             try:
-                add_printer_to_config(Printer(
-                    serial_number=printer.serial_number,
-                    name=printer.name,
-                    access_code=access_code,
-                    model=printer.model,
-                    account_email=None,
-                    ip_address=printer.ip_address
-                ))
+                # Don't store ip, we'll look it up again when we need it
+                add_printer_to_config(
+                    dataclasses.replace(printer, ip_address=None))
                 spinner.task_complete()
 
             except Exception as e:

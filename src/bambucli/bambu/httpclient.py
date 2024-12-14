@@ -1,7 +1,5 @@
 
 from abc import ABC
-from enum import Enum
-import json
 from bambucli.bambu.printer import Printer, PrinterModel
 from bambucli.bambu.project import Project
 import cloudscraper

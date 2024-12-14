@@ -28,10 +28,13 @@ class ConnectionFailedException(Exception):
 class MqttClient:
 
     def for_printer(printer: Printer, on_connect=None, on_push_status=None, on_push_full_status=None, on_get_version=None):
-        if (printer.account_email is None):
+        if printer.account_email is not None:
+            return MqttClient.for_cloud_printer(printer, on_connect, on_push_status, on_push_full_status, on_get_version)
+        elif (printer.ip_address is not None):
             return MqttClient.for_local_printer(printer.ip_address, printer.serial_number, printer.access_code, on_connect, on_push_status, on_push_full_status, on_get_version)
         else:
-            return MqttClient.for_cloud_printer(printer, on_connect, on_push_status, on_push_full_status, on_get_version)
+            raise Exception(
+                'Printer must have either a known IP-address or an account-email in order to connect to MQTT')
 
     def for_local_printer(ip_address: str, serial_number: str, access_code: str, on_connect=None, on_push_status=None, on_push_full_status=None, on_get_version=None):
         mqttClient = mqtt.Client(
@@ -123,7 +126,7 @@ class MqttClient:
                 "print": {
                     "sequence_id": "0",
                     "command": "project_file",
-                    "param": "Metadata/plate_{plate_number}.gcode",
+                    "param": f"Metadata/plate_{plate_number}.gcode",
                     "project_id": "0",  # Always 0 for local prints
                     "profile_id": "0",  # Always 0 for local prints
                     "task_id": "0",  # Always 0 for local prints

@@ -1,10 +1,10 @@
 # bambu-cli
 
-A command-line interface for controlling Bambu Lab 3D printers via MQTT and FTPS protocols.
+A command-line interface for controlling Bambu Lab 3D printers via MQTT, HTTPS and FTPS protocols.
 
 ## Features
 
-- Connect to Bambu Lab printers over local network or Bambu Cloud
+- Connect to Bambu Lab printers over LAN or Bambu Cloud
 - Upload print files to local printer
 - Trigger print and track progress
 - Pause, resume and cancel print in progress
@@ -40,7 +40,7 @@ bambu add-local
 
 Or you can login to your Bambu Cloud account...:
 ```bash
-bambu login --email user@example.com --password mypassword
+bambu login user@example.com --password mypassword
 ```
 
 ... and then add a printer already associated with that account:
@@ -48,12 +48,7 @@ bambu login --email user@example.com --password mypassword
 bambu add-cloud
 ```
 
-Upload a file to print:
-```bash
-bambu upload myP1S my_print.gcode.3mf
-```
-
-Print the file
+Print a file. If the printer can be found on the local network it will be uploaded via FTPS first
 ```bash
 bambu print myP1S my_print.gcode.3mf
 ```
