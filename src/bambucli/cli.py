@@ -9,6 +9,7 @@ from bambucli.actions.addlocal import add_local_printer
 import logging
 
 from bambucli.actions.project import view_project
+from bambucli.actions.read3mf import read_3mf_file
 from bambucli.actions.upload import upload_file
 
 logging.basicConfig(level=logging.INFO, filename='bambu.log',
@@ -69,6 +70,11 @@ def main():
     monitor_parser.add_argument(
         'printer', type=str, help='The printer to monitor')
     monitor_parser.set_defaults(action=monitor)
+
+    threemf_parser = subparsers.add_parser(
+        '3mf', help='Parse info from a 3mf file')
+    threemf_parser.add_argument('file', type=str, help='The 3mf file to parse')
+    threemf_parser.set_defaults(action=read_3mf_file)
 
     args = parser.parse_args()
     args.action(args)
