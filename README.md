@@ -53,17 +53,28 @@ Print a file. If the printer can be found on the local network it will be upload
 bambu print myP1S my_print.gcode.3mf
 ```
 
-AMS is supported. To enable it add the filament-slot mapping:
-```bash
-bambu print myP1S my_print.gcode.3mf --ams 2 x 0
-```
-
-
 While print is in progress:
  - Press 'p' to pause the print job
  - Press 'r' to resume a paused print job
  - Press 'c' to cancel the print job
  - Press 'q' to exit the interface without affecting the print job
+
+AMS is supported. To enable it add the filament-slot mapping:
+```bash
+bambu print myP1S my_print.gcode.3mf --ams 2 x 0
+```
+
+3mf project files can be interrogated for useful information:
+```bash
+bambu 3mf my_print.gcode.3mf
+```
+```
+Model: P1S
+Nozzle Diameter: 0.4
+Filament Type: PLA
+Filament Amount: 5.17g
+Print Time: 00:14:55
+```
 
 ## License
 GNU 3.0 License - see LICENSE file for details 
