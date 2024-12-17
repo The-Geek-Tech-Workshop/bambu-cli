@@ -1,15 +1,18 @@
 
 from abc import ABC
+from enum import Enum
+from typing import List, Optional
 from bambucli.bambu.printer import Printer, PrinterModel
 from bambucli.bambu.project import Project
+from bambucli.bambu.task import Task
 import cloudscraper
 import certifi
 from requests.exceptions import HTTPError
 from dataclasses import dataclass
+from string import Template
 
-# Many thanks to https://github.com/t0nyz0/bambu-auth/blob/main/auth.py for working this out :)
+# Many thanks to https://github.com/t0nyz0/bambu-auth/blob/main/auth.py for working the login process out :)
 
-BAMBU_LOGIN_HOST = "api.bambulab.com"
 # Slicer headers
 headers = {
     'User-Agent': 'bambu_network_agent/01.09.05.01',
@@ -25,6 +28,19 @@ headers = {
     'accept': 'application/json',
     'Content-Type': 'application/json'
 }
+
+BAMBU_API_HOST = "https://api.bambulab.com"
+
+
+class URL(Enum):
+    LOGIN = f"{BAMBU_API_HOST}/v1/user-service/user/login"
+    SEND_LOGIN_CODE = f"{BAMBU_API_HOST}/v1/user-service/user/sendemail/code"
+    TFA_LOGIN = "https://bambulab.com/api/sign-in/tfa"
+    GET_PROJECTS = f"{BAMBU_API_HOST}/v1/iot-service/api/user/project"
+    GET_PROJECT = Template(f"{
+        BAMBU_API_HOST}/v1/iot-service/api/user/project/$project_id")
+    GET_PRINTERS = f"{BAMBU_API_HOST}/v1/iot-service/api/user/bind"
+    GET_TASKS = f"{BAMBU_API_HOST}/v1/user-service/my/tasks"
 
 
 class LOGIN_STATUS(ABC):
@@ -60,7 +76,7 @@ class HttpClient:
         }
 
         auth_response = self._client.post(
-            f"https://{BAMBU_LOGIN_HOST}/v1/user-service/user/login",
+            URL.LOGIN.value,
             headers=headers,
             json=auth_payload,
             verify=certifi.where()
@@ -89,7 +105,7 @@ class HttpClient:
 
     def request_verification_code(self, email):
         send_code_response = self._client.post(
-            f"https://{BAMBU_LOGIN_HOST}/v1/user-service/user/sendemail/code",
+            URL.SEND_LOGIN_CODE.value,
             headers=headers,
             json={
                 "email": email,
@@ -101,7 +117,7 @@ class HttpClient:
 
     def login_with_verification_code(self, email, code):
         verify_response = self._client.post(
-            f"https://{BAMBU_LOGIN_HOST}/v1/user-service/user/login",
+            URL.LOGIN.value,
             headers=headers,
             json={
                 "account": email,
@@ -123,7 +139,7 @@ class HttpClient:
         }
 
         tfa_response = self._client.post(
-            "https://bambulab.com/api/sign-in/tfa",
+            URL.TFA_LOGIN.value,
             headers=headers,
             json=verify_payload,
             verify=certifi.where()
@@ -138,7 +154,7 @@ class HttpClient:
     def get_projects(self, access_token):
         try:
             api_response = self._client.get(
-                f"https://{BAMBU_LOGIN_HOST}/v1/iot-service/api/user/project",
+                URL.GET_PROJECTS.value,
                 headers=dict(
                     headers, **{"Authorization": f"Bearer {access_token}"}),
                 verify=certifi.where()
@@ -153,7 +169,7 @@ class HttpClient:
     def get_project(self, account, project_id):
         try:
             api_response = self._client.get(
-                f"https://{BAMBU_LOGIN_HOST}/v1/iot-service/api/user/project/{project_id}",
+                URL.GET_PROJECT.value.substitute(project_id=project_id),
                 headers=dict(
                     headers, **{"Authorization": f"Bearer {account.access_token}"}),
                 verify=certifi.where()
@@ -169,7 +185,7 @@ class HttpClient:
     def get_printers(self, account):
         try:
             api_response = self._client.get(
-                f"https://{BAMBU_LOGIN_HOST}/v1/iot-service/api/user/bind",
+                URL.GET_PRINTERS.value,
                 headers=dict(
                     headers, **{"Authorization": f"Bearer {account.access_token}"}),
                 verify=certifi.where()
@@ -188,3 +204,24 @@ class HttpClient:
 
         except HTTPError as http_err:
             print(f"HTTP error occurred during API request: {http_err}")
+
+    # 'after' parameter has no effect :/
+    def get_tasks(self, account, limit: int = 20, device_id: Optional[str] = None, after: int = 0) -> List[Task]:
+        params = {"limit": limit, "after": after}
+        if device_id:
+            params["deviceId"] = device_id
+        json = self._get(URL.GET_TASKS.value,
+                         account.access_token, params=params)
+        return (list(
+            map(lambda task: Task.from_json(task), json.get("hits", []))), json.get("total", 0))
+
+    def _get(self, url, access_token, params=None):
+        api_response = self._client.get(
+            url,
+            params=params,
+            headers=dict(
+                headers, **{"Authorization": f"Bearer {access_token}"}),
+            verify=certifi.where()
+        )
+        print(api_response.text)
+        return api_response.json()

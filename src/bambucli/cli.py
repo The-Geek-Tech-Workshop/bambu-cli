@@ -1,6 +1,7 @@
 import argparse
 from bambucli.actions.enablengrok import enable_ngrok
 from bambucli.actions.addcloud import add_cloud_printer
+from bambucli.actions.gettasks import get_tasks
 from bambucli.actions.login import login
 from bambucli.actions.info import get_version_info
 from bambucli.actions.monitor import monitor
@@ -75,6 +76,9 @@ def main():
         '3mf', help='Parse info from a 3mf file')
     threemf_parser.add_argument('file', type=str, help='The 3mf file to parse')
     threemf_parser.set_defaults(action=read_3mf_file)
+
+    tasks_parser = subparsers.add_parser('tasks', help='Get printer tasks')
+    tasks_parser.set_defaults(action=get_tasks)
 
     args = parser.parse_args()
     args.action(args)
