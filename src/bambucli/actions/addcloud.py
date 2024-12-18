@@ -1,7 +1,8 @@
 
-from bambucli.bambu.httpclient import HttpClient
+from bambucli.actions.ensureaccount import get_account_and_ensure_token
+from bambucli.bambu.httpapi import get_printers
 from bambucli.bambu.printer import Printer
-from bambucli.config import add_printer, get_cloud_account
+from bambucli.config import add_printer
 from bambucli.spinner import Spinner
 
 
@@ -10,7 +11,7 @@ def add_cloud_printer(args):
     spinner = Spinner()
 
     spinner.task_in_progress("Fetching account details")
-    account = get_cloud_account(args.email)
+    account = get_account_and_ensure_token(args.email)
 
     if account is None:
         spinner.task_failed("Account not found")
@@ -18,7 +19,7 @@ def add_cloud_printer(args):
     spinner.task_complete()
     spinner.task_in_progress(
         f"Fetching printers for Bambu Cloud account {account.email}")
-    printers = HttpClient().get_printers(account)
+    printers = get_printers(account)
     spinner.task_complete()
     for index, printer in enumerate(printers):
         print(
