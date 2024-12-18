@@ -1,6 +1,4 @@
-
-
-from bambucli.bambu.httpclient import HttpClient
+from bambucli.bambu.httpapi import get_project
 from bambucli.config import get_cloud_account
 from bambucli.spinner import Spinner
 
@@ -21,7 +19,7 @@ def view_project(args):
     spinner.task_in_progress("Fetching project data")
     project = None
     try:
-        project = HttpClient().get_project(account, project_id)
+        project = get_project(account, project_id)
         spinner.task_complete()
     except Exception as e:
         spinner.task_failed(e)
