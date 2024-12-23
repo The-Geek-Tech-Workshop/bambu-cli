@@ -49,5 +49,5 @@ class GetVersionMessage:
     def printer_model(self) -> PrinterModel:
         for module in self.module:
             if module.name == 'ota':
-                return PrinterModel.from_model_code(module.project_name)
+                return PrinterModel.from_bambu_model_code(module.project_name)
         return PrinterModel.UNKNOWN

@@ -37,7 +37,7 @@ class SsdpClient():
                         serial_number=data.get('USN'),
                         name=data.get('DevName.bambu.com'),
                         ip_address=data.get('Location'),
-                        model=PrinterModel.from_model_code(
+                        model=PrinterModel.from_bambu_model_code(
                             data.get('DevModel.bambu.com')),
                     )
                     if printer.serial_number == self._serial_number or self._serial_number is None:
@@ -60,7 +60,7 @@ class SsdpClient():
         except Exception:
             # Ignore the exception, we're just using this to break out of the loop
             pass
-          
+
         transport.close()
         loop.close()
 

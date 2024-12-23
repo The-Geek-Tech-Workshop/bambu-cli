@@ -183,7 +183,7 @@ def get_printers(account: Account) -> List[Printer]:
         serial_number=printer.get("dev_id"),
         name=printer.get("name"),
         access_code=printer.get("dev_access_code"),
-        model=PrinterModel.from_model_code(
+        model=PrinterModel.from_bambu_model_code(
             printer.get("dev_model_name")),
         account_email=account.email,
         ip_address=None

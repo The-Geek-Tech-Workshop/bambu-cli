@@ -24,6 +24,8 @@ def main():
 
     add_local_parser = subparsers.add_parser(
         'add-local', help='Add a local printer')
+    add_local_parser.add_argument(
+        '--ip', type=str, help='The IP of the printer')
     add_local_parser.set_defaults(action=add_local_printer)
 
     add_cloud_parser = subparsers.add_parser(
