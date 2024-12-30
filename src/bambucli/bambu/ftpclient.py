@@ -33,5 +33,10 @@ class FtpClient:
         with open(local_file, 'rb') as file_buffer:
             self._ftps.storbinary(f'STOR {remote_file}', file_buffer)
 
+    def list_files(self, remote_path: str | Path = ".") -> list[str]:
+        remote_path = remote_path if remote_path.__class__ == Path else Path(
+            remote_path)
+        return self._ftps.nlst(str(remote_path))
+
     def quit(self):
         self._ftps.quit()

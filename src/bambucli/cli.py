@@ -1,6 +1,7 @@
 import argparse
 from bambucli.actions.enablengrok import enable_ngrok
 from bambucli.actions.addcloud import add_cloud_printer
+from bambucli.actions.listfiles import list_sd_files
 from bambucli.actions.login import login
 from bambucli.actions.info import get_version_info
 from bambucli.actions.monitor import monitor
@@ -39,6 +40,14 @@ def main():
         '--ams', type=str, nargs='+', help='The AMS filament mappings')
     print_parser.set_defaults(action=print_file)
 
+    list_files_parser = subparsers.add_parser(
+        'list-files', help='List files on the printer')
+    list_files_parser.add_argument(
+        'printer', type=str, help='The printer to list files for')
+    list_files_parser.add_argument(
+        '--ip', type=str, help='The IP of the printer')
+    list_files_parser.set_defaults(action=list_sd_files)
+
     upload_parser = subparsers.add_parser('upload', help='Upload a file')
     upload_parser.add_argument(
         'printer', type=str, help='The printer to upload to')
@@ -68,7 +77,7 @@ def main():
 
     monitor_parser = subparsers.add_parser('monitor', help='Monitor a printer')
     monitor_parser.add_argument(
-        'printer', type=str, help='The printer to monitor')
+        '--printers', type=str, nargs='+', required=False, help='The printers to monitor')
     monitor_parser.set_defaults(action=monitor)
 
     threemf_parser = subparsers.add_parser(
