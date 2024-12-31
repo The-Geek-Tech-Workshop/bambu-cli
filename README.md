@@ -1,4 +1,4 @@
-# bambu-cli
+![image](https://github.com/user-attachments/assets/4df0341e-5e3e-4c9f-9412-3b87b1b93ef0)# bambu-cli
 
 A command-line interface for controlling Bambu Lab 3D printers via MQTT, HTTPS and FTPS protocols.
 
@@ -75,6 +75,12 @@ Filament Type: PLA
 Filament Amount: 5.17g
 Print Time: 00:14:55
 ```
+
+Monitor and control one or more of your printers at once with detailed status information (exclude the --printers parameter to monitor all known printers):
+```bash
+bambu monitor --printers myP1S myA1
+```
+![Image of 3 printers being monitored](/monitor.png)
 
 ## License
 GNU 3.0 License - see LICENSE file for details 
