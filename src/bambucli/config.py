@@ -6,6 +6,24 @@ import logging
 from typing import Optional, Dict
 
 
+def get_all_printers() -> Dict[str, Printer]:
+    try:
+        config_file = Path.home() / '.bambu-cli' / 'printers.json'
+
+        if not config_file.exists():
+            logging.error("No printer configuration file found")
+            return {}
+
+        with open(config_file, 'r') as f:
+            config = json.load(f)
+
+        return {name: deserialise_printer(config[name]) for name in config}
+
+    except Exception as e:
+        logging.error(f"Failed to load printer configuration: {e}")
+        return {}
+
+
 def get_printer(name: str) -> Optional[Printer]:
     """Read printer configuration from JSON file."""
     try:

@@ -12,11 +12,14 @@ import logging
 import json
 
 logger = logging.getLogger(__name__)
+BAMBU_CLOUD_MQTT_HOST = 'us.mqtt.bambulab.com'
 BAMBU_CLOUD_MQTT_PORT = 8883
 BAMBU_LOCAL_MQTT_PORT = 8883
 BAMBU_LOCAL_MQTT_USERNAME = 'bblp'
 
-CLIENT_ID = f'bambu-cli-{str(uuid.uuid4())}'
+# We need to use a unique client ID for each connection to the MQTT broker else it will kick off the other connections with the same id
+CLIENT_ID_PREFIX = 'bambu-cli'
+
 
 
 class ConnectionFailedException(Exception):
@@ -38,7 +41,7 @@ class MqttClient:
 
     def for_local_printer(ip_address: str, serial_number: str, access_code: str, on_connect=None, on_push_status=None, on_push_full_status=None, on_get_version=None):
         mqttClient = mqtt.Client(
-            callback_api_version=CallbackAPIVersion.VERSION2, protocol=mqtt.MQTTv311, clean_session=True, client_id=CLIENT_ID)
+            callback_api_version=CallbackAPIVersion.VERSION2, protocol=mqtt.MQTTv311, clean_session=True, client_id=f"{CLIENT_ID_PREFIX}-{serial_number}")
         mqttClient.username_pw_set(BAMBU_LOCAL_MQTT_USERNAME, access_code)
         mqttClient.tls_set(cert_reqs=ssl.CERT_NONE)
         mqttClient.tls_insecure_set(True)
@@ -47,12 +50,12 @@ class MqttClient:
     def for_cloud_printer(cloud_printer, on_connect=None, on_push_status=None, on_push_full_status=None, on_get_version=None):
         account = get_cloud_account(cloud_printer.account_email)
         mqttClient = mqtt.Client(
-            callback_api_version=CallbackAPIVersion.VERSION2, protocol=mqtt.MQTTv311, clean_session=True, client_id=CLIENT_ID)
+            callback_api_version=CallbackAPIVersion.VERSION2, protocol=mqtt.MQTTv311, clean_session=True, client_id=f"{CLIENT_ID_PREFIX}-{cloud_printer.serial_number}")
         mqttClient.username_pw_set(
             f"u_{account.user_id}", account.access_token)
         mqttClient.tls_set(cert_reqs=ssl.CERT_NONE)
         mqttClient.tls_insecure_set(True)
-        return MqttClient(mqttClient, cloud_printer.serial_number, 'us.mqtt.bambulab.com', BAMBU_CLOUD_MQTT_PORT, on_connect, on_push_status, on_push_full_status, on_get_version)
+        return MqttClient(mqttClient, cloud_printer.serial_number, BAMBU_CLOUD_MQTT_HOST, BAMBU_CLOUD_MQTT_PORT, on_connect, on_push_status, on_push_full_status, on_get_version)
 
     def __init__(self, client, serial_number, ip_address, port, on_connect=None, on_push_status=None, on_push_full_status=None, on_get_version=None):
         client.on_connect = lambda _, userdata, flags, reason_code, properties: self._on_connect(
@@ -67,13 +70,14 @@ class MqttClient:
         self._on_push_status = on_push_status
         self._on_push_full_status = on_push_full_status
         self._on_get_version = on_get_version
+        self.serial_number = serial_number
 
     def _connect(self, ip_address, port):
         self._client.connect(ip_address, port)
 
     def _on_connect(self, userdata, flags, reason_code, properties):
         if (reason_code == 'Success'):
-            logger.info(f'Connected successfully with result code {
+            logger.info(f'Connected successfully to {self.serial_number} with result code {
                         str(reason_code)}')
             self._client.subscribe(self._report_topic)
             if self._on_connect:
@@ -179,7 +183,7 @@ class MqttClient:
             }
         ))
 
-    def get_version_info(self):
+    def request_version_info(self):
         return self._publish(json.dumps(
             {
                 "info": {

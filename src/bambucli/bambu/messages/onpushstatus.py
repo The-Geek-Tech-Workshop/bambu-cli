@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
+from ipaddress import IPv4Address, IPv4Network
 import logging
 from typing import List, Dict, Optional
 
@@ -113,7 +114,7 @@ class AmsModule:
     humidity: str
     id: str
     temp: str
-    tray: List[TrayInfo]
+    trays: List[TrayInfo]
 
     @staticmethod
     def from_json(json_payload: dict) -> 'AmsModule':
@@ -121,8 +122,8 @@ class AmsModule:
             humidity=json_payload.get('humidity'),
             id=json_payload.get('id'),
             temp=json_payload.get('temp'),
-            tray=[TrayInfo.from_json(tray)
-                  for tray in json_payload.get('tray', [])]
+            trays=[TrayInfo.from_json(tray)
+                   for tray in json_payload.get('tray', [])]
         )
 
 
@@ -167,6 +168,46 @@ class PrintErrorCode(Enum):
 
 
 @dataclass
+class NetworkInfo:
+    ip: int
+    mask: int
+
+    @staticmethod
+    def from_json(json_payload: dict) -> 'NetworkInfo':
+        return NetworkInfo(
+            ip=json_payload.get('ip'),
+            mask=json_payload.get('mask')
+        )
+
+
+@dataclass
+class Network:
+    conf: int
+    info: List[NetworkInfo]
+
+    @staticmethod
+    def from_json(json_payload: dict) -> 'Network':
+        return Network(
+            conf=safe_int(json_payload.get('conf')),
+            info=[NetworkInfo.from_json(info)
+                  for info in json_payload.get('info')]
+        )
+
+
+@dataclass
+class LightReport:
+    node: str
+    mode: str
+
+    @staticmethod
+    def from_json(json_payload: dict) -> 'LightReport':
+        return LightReport(
+            node=json_payload.get('node'),
+            mode=json_payload.get('mode')
+        )
+
+
+@dataclass
 class OnPushStatusMessage:
     ams: Optional[AmsStatus]
     ams_rfid_status: int
@@ -192,7 +233,7 @@ class OnPushStatusMessage:
     ipcam: IpcamConfig
     layer_num: int
     lifecycle: str
-    lights_report: List[Dict[str, str]]
+    lights_report: List[LightReport]
     maintain: int
     mc_percent: int
     mc_print_error_code: str
@@ -200,7 +241,9 @@ class OnPushStatusMessage:
     mc_print_sub_stage: int
     mc_remaining_time: int
     msg: int
+    net: Network
     nozzle_diameter: str
+    nozzle_type: str
     nozzle_target_temper: float
     nozzle_temper: float
     print_error: PrintErrorCode
@@ -268,7 +311,8 @@ class OnPushStatusMessage:
                 'ipcam')) if json_payload.get('ipcam') else None,
             layer_num=safe_int(json_payload.get('layer_num')),
             lifecycle=json_payload.get('lifecycle'),
-            lights_report=json_payload.get('lights_report'),
+            lights_report=[LightReport.from_json(light) for light in json_payload.get(
+                'lights_report', [])],
             maintain=safe_int(json_payload.get('maintain')),
             mc_percent=safe_int(json_payload.get('mc_percent')),
             mc_print_error_code=json_payload.get('mc_print_error_code'),
@@ -277,7 +321,10 @@ class OnPushStatusMessage:
                 json_payload.get('mc_print_sub_stage')),
             mc_remaining_time=safe_int(json_payload.get('mc_remaining_time')),
             msg=safe_int(json_payload.get('msg')),
+            net=Network.from_json(json_payload.get(
+                'net')) if json_payload.get('net') else None,
             nozzle_diameter=json_payload.get('nozzle_diameter'),
+            nozzle_type=json_payload.get('nozzle_type'),
             nozzle_target_temper=safe_float(
                 json_payload.get('nozzle_target_temper')),
             nozzle_temper=safe_float(json_payload.get('nozzle_temper')),

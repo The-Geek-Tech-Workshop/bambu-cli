@@ -5,7 +5,7 @@
 groups = ["default"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:f7b36fa2d5ed5949b33522e97436b89e27c3b59ecf29624ca79431ba9ee75e23"
+content_hash = "sha256:f1994a6eea812c402739b77b1e5b818a8ed370bd8c3aaee73430badef027b423"
 
 [[metadata.targets]]
 requires_python = "==3.12.*"
@@ -136,6 +136,16 @@ groups = ["default"]
 files = [
     {file = "idna-3.10-py3-none-any.whl", hash = "sha256:946d195a0d259cbba61165e88e65941f16e9b36ea6ddb97f00452bae8b1287d3"},
     {file = "idna-3.10.tar.gz", hash = "sha256:12f65c9b470abda6dc35cf8e63cc574b1c52b11df2c86030af0ac09b01b13ea9"},
+]
+
+[[package]]
+name = "ipaddress"
+version = "1.0.23"
+summary = "IPv4/IPv6 manipulation library"
+groups = ["default"]
+files = [
+    {file = "ipaddress-1.0.23-py2.py3-none-any.whl", hash = "sha256:6e0f4a39e66cb5bb9a137b00276a2eff74f93b71dcbdad6f10ff7df9d3557fcc"},
+    {file = "ipaddress-1.0.23.tar.gz", hash = "sha256:b7f8e0369580bb4a24d5ba1d7cc29660a4a6987763faf1d8a8046830e020e7e2"},
 ]
 
 [[package]]
