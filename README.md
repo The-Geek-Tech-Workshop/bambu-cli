@@ -1,4 +1,4 @@
-![image](https://github.com/user-attachments/assets/4df0341e-5e3e-4c9f-9412-3b87b1b93ef0)# bambu-cli
+# bambu-cli
 
 A command-line interface for controlling Bambu Lab 3D printers via MQTT, HTTPS and FTPS protocols.
 
