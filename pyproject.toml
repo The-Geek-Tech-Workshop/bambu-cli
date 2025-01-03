@@ -33,7 +33,7 @@ distribution = true
 
 [tool.pdm.version]
 source = "scm"
-tag_regex = "v(.+)"
+tag_regex = "v([0-9]+\\.[0-9]+\\.[0-9]+)"
 
 [tool.pdm.options]
 add = ["--no-self"]
