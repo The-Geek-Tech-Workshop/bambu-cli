@@ -9,7 +9,7 @@ from typing import Dict, List, Optional
 from bambucli.bambu.mqttclient import MqttClient
 from bambucli.bambu.printer import Printer
 from bambucli.bambu.printstages import MC_PRINT_STAGES
-from bambucli.bambu.speedprofiles import SPEED_PROFILE
+from bambucli.bambu.speedprofiles import SPEED_PROFILE, SpeedProfile
 from bambucli.bambu.ssdpclient import SsdpClient
 from rich.align import Align
 from rich.layout import Layout
@@ -222,7 +222,7 @@ class PrinterDashboard():
     def generate_dashboard(self):
 
         printer_table = Table(
-            caption='< > = Select | c = Cancel | p = Pause | r = Resume | q = Quit', min_width=70)
+            caption='< > = Select | c = Cancel | p = Pause | r = Resume | 1-4 = Set speed | q = Quit', min_width=70)
         printer_table.add_column()
         for printer in self.printers:
             printer_table.add_column(
@@ -365,6 +365,22 @@ def dashboard(*printers):
                 case 'r':
                     logger.info('Resuming')
                     clients[selected_printer].resume_print()
+                case '1':
+                    logger.info('Setting speed to silent')
+                    clients[selected_printer].set_print_speed(
+                        SpeedProfile.SILENT)
+                case '2':
+                    logger.info('Setting speed to standard')
+                    clients[selected_printer].set_print_speed(
+                        SpeedProfile.STANDARD)
+                case '3':
+                    logger.info('Setting speed to sport')
+                    clients[selected_printer].set_print_speed(
+                        SpeedProfile.SPORT)
+                case '4':
+                    logger.info('Setting speed to ludicrous')
+                    clients[selected_printer].set_print_speed(
+                        SpeedProfile.LUDICROUS)
                 case 'right':
                     selected_printer = (selected_printer + 1) % len(printers)
                     queue.put((3, {'type': 'select_printer',
