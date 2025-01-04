@@ -6,9 +6,10 @@ from math import floor
 from queue import PriorityQueue
 import threading
 from typing import Dict, List, Optional
-from bambucli.bambu.messages.onpushstatus import PrintErrorCode
 from bambucli.bambu.mqttclient import MqttClient
 from bambucli.bambu.printer import Printer
+from bambucli.bambu.printstages import MC_PRINT_STAGES
+from bambucli.bambu.speedprofiles import SPEED_PROFILE
 from bambucli.bambu.ssdpclient import SsdpClient
 from rich.align import Align
 from rich.layout import Layout
@@ -53,6 +54,8 @@ class PrintStatus():
     current_layer: int = field(default_factory=lambda: None)
     total_layers: int = field(default_factory=lambda: None)
     state: str = field(default_factory=lambda: None)
+    stage: int = field(default_factory=lambda: None)
+    speed: int = field(default_factory=lambda: None)
 
 
 @dataclass
@@ -199,6 +202,10 @@ class PrinterDashboard():
             self.printer_info[serial_number].print_status.current_layer = status.layer_num
         if status.total_layer_num is not None:
             self.printer_info[serial_number].print_status.total_layers = status.total_layer_num
+        if status.stg_cur is not None:
+            self.printer_info[serial_number].print_status.stage = status.stg_cur
+        if status.spd_lvl is not None:
+            self.printer_info[serial_number].print_status.speed = status.spd_lvl
 
         if status.vt_tray:
             self.printer_info[serial_number].external_spool = Filament(
@@ -275,14 +282,21 @@ class PrinterDashboard():
             '[bold]Print State', *[info.print_status.state if info.print_status.state and info.print_status.type in active_print_types else 'n/a' for info in self.printer_info.values()])
         printer_table.add_row(
             '[bold]File', *[info.print_status.file if info.print_status.file and info.print_status.type in active_print_types else 'n/a' for info in self.printer_info.values()])
-
-        def format_progress_bar(percent):
-            if percent is None:
-                return 'n/a'
-            progress_bars_done = floor(percent / 10)
-            return f"[red]{'-' * progress_bars_done}[/red][black]{'-' * (10 - progress_bars_done)}[/black] {percent}%"
         printer_table.add_row(
-            '[bold]Progress', *[format_progress_bar(info.print_status.percent) if info.print_status.percent and info.print_status.type in active_print_types else 'n/a' for info in self.printer_info.values()])
+            '[bold]Stage', *[MC_PRINT_STAGES.get(int(info.print_status.stage), f"Unknown: ({info.print_status.stage})") if info.print_status.stage is not None and info.print_status.type in active_print_types else 'n/a' for info in self.printer_info.values()])
+        printer_table.add_row(
+            '[bold]Speed', *[f"{SPEED_PROFILE.get(info.print_status.speed, f"Unknown: {info.print_status.speed}")}" if info.print_status.speed is not None and info.print_status.type in active_print_types else 'n/a' for info in self.printer_info.values()])
+
+        def format_progress(print_status: PrintStatus):
+            progress_bars_done = floor(
+                print_status.percent / 10) if print_status.percent is not None else 0
+            progress_bar = f"[red]{'-' * progress_bars_done}[/red][black]{
+                '-' * (10 - progress_bars_done)}[/black] {print_status.percent}%" if print_status.percent is not None else 'n/a'
+            layer_info = f"({print_status.current_layer}/{
+                print_status.total_layers})" if print_status.current_layer is not None and print_status.total_layers is not None else 'n/a'
+            return f"{progress_bar} {layer_info}"
+        printer_table.add_row(
+            '[bold]Progress', *[format_progress(info.print_status) if info.print_status.type in active_print_types else 'n/a' for info in self.printer_info.values()])
 
         return Layout(Align.center(printer_table))
 
