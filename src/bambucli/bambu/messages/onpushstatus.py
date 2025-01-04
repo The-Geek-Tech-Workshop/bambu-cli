@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from enum import Enum
-from ipaddress import IPv4Address, IPv4Network
 import logging
 from typing import List, Dict, Optional
 
