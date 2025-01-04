@@ -4,6 +4,7 @@ import uuid
 from bambucli.bambu.messages.getversion import GetVersionMessage
 from bambucli.bambu.messages.onpushstatus import OnPushStatusMessage
 from bambucli.bambu.printer import Printer
+from bambucli.bambu.speedprofiles import SpeedProfile
 from bambucli.config import get_cloud_account
 import paho.mqtt.client as mqtt
 from paho.mqtt.enums import CallbackAPIVersion
@@ -19,7 +20,6 @@ BAMBU_LOCAL_MQTT_USERNAME = 'bblp'
 
 # We need to use a unique client ID for each connection to the MQTT broker else it will kick off the other connections with the same id
 CLIENT_ID_PREFIX = 'bambu-cli'
-
 
 
 class ConnectionFailedException(Exception):
@@ -201,6 +201,17 @@ class MqttClient:
                     "command": "pushall",
                     "version": 1,
                     "push_target": 1
+                }
+            }
+        ))
+
+    def set_print_speed(self, speedProfile: SpeedProfile):
+        return self._publish(json.dumps(
+            {
+                "print": {
+                    "sequence_id": "0",
+                    "command": "print_speed",
+                    "param": str(speedProfile.value),
                 }
             }
         ))
