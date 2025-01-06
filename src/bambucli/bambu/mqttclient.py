@@ -71,6 +71,7 @@ class MqttClient:
         self._on_push_full_status = on_push_full_status
         self._on_get_version = on_get_version
         self.serial_number = serial_number
+        self._callbacks = {}
 
     def _connect(self, ip_address, port):
         self._client.connect(ip_address, port)
@@ -94,6 +95,12 @@ class MqttClient:
         message = json_payload.get("print", json_payload.get("info"))
 
         if message is not None:
+            message_id = message.get("message_id", None)
+            if message_id is not None and message.get("reason", "") == "success" and message.get("reason", "") == "success":
+                callback = self._callbacks.get(message_id, None)
+                if callback:
+                    callback()
+                    del self._callbacks[message_id]
             match message.get("command", ""):
                 case "push_status":
                     if self._on_push_full_status or self._on_push_status:
@@ -124,7 +131,11 @@ class MqttClient:
     def _publish(self, message):
         return self._client.publish(self._request_topic, message)
 
-    def print(self, file: str, ams_mappings: Optional[list[int]] = None, http_server: Optional[str] = None, plate_number: int = 1):
+    def print(self, file: str, ams_mappings: Optional[list[int]] = None, http_server: Optional[str] = None, plate_number: int = 1, onSuccess: Optional[callable] = None):
+        messageId = str(uuid.uuid4())
+        if onSuccess:
+            self._message_on_success_callback(
+                messageId, onSuccess)
         return self._publish(json.dumps(
             {
                 "print": {
@@ -145,7 +156,8 @@ class MqttClient:
                     "layer_inspect": False,
                     "ams_mapping": ams_mappings if ams_mappings is not None else [],
                     "use_ams": ams_mappings is not None,
-                    "job_type": 1
+                    "job_type": 1,
+                    "message_id": messageId
                 }
             }
         ))
@@ -215,3 +227,22 @@ class MqttClient:
                 }
             }
         ))
+
+    def clean_print_error(self, onSuccess: Optional[callable] = None):
+        messageId = str(uuid.uuid4())
+        if onSuccess:
+            self._message_on_success_callback(
+                messageId, onSuccess)
+        return self._publish(json.dumps(
+            {
+                "print": {
+                    "sequence_id": "0",
+                    "command": "clean_print_error",
+                    "print_error": 0,
+                    "message_id": messageId
+                }
+            }
+        ))
+
+    def _message_on_success_callback(self, messageId, callback):
+        self._callbacks[messageId] = callback

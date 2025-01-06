@@ -2,7 +2,7 @@ from pathlib import Path
 from bambucli.actions.ensureip import ensure_printer_ip_address
 from bambucli.bambu.ftpclient import CACHE_DIRECTORY, FtpClient
 from bambucli.config import get_printer
-from bambucli.printermonitor import printer_monitor
+from bambucli.printdialogue import print_dialogue
 from bambucli.spinner import Spinner
 
 
@@ -56,38 +56,11 @@ def print_file(args):
         pass
     spinner.task_complete()
 
-    # spinner.task_in_progress("Checking for ngrok token")
-    # ngrok_auth_token = None
-    # try:
-    #     ngrok_auth_token = get_ngrok_auth_token()
-    # except Exception as e:
-    #     spinner.task_failed(e)
-    #     return
-    # spinner.task_complete()
-
-    # file_server, http_server = _start_tunneled_file_server(
-    #     ngrok_auth_token, spinner)
-
-    def on_connect(client, reason_code):
-        client.print(remote_path, ams_mappings=ams_mapping, plate_number=args.plate)
-
-    printer_monitor(printer, on_connect=on_connect)
-
-    # if file_server:
-    #     spinner.task_in_progress(
-    #         "Shutting down file server", lambda: asyncio.run(file_server.shutdown()))
-
-
-# def _start_tunneled_file_server(token, spinner):
-#     if token:
-#         spinner.task_in_progress("Starting tunneled file server")
-#         try:
-#             file_server = FileServer()
-#             http_server = file_server.serve(token)
-#             spinner.task_complete()
-#             return file_server, http_server
-#         except Exception as e:
-#             spinner.task_failed(e)
-#             return None, None
-#     else:
-#         return None, None
+    try:
+        print_dialogue(printer, remote_path, ams_mapping, args.plate)
+        spinner.task_in_progress("Printing")
+        spinner.task_complete()
+    except Exception as e:
+        spinner.task_in_progress("Printing")
+        spinner.task_failed(e)
+        return

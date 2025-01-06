@@ -3,6 +3,8 @@ from enum import Enum
 import logging
 from typing import List, Dict, Optional
 
+from bambucli.bambu.gcodestate import GcodeState
+
 logger = logging.getLogger(__name__)
 
 
@@ -225,7 +227,7 @@ class OnPushStatusMessage:
     gcode_file: str
     gcode_file_prepare_percent: str
     gcode_start_time: str
-    gcode_state: str
+    gcode_state: GcodeState
     heatbreak_fan_speed: str
     home_flag: int
     hw_switch_state: int
@@ -281,6 +283,15 @@ class OnPushStatusMessage:
                 logger.warning(f"Unknown print error code: {error_code}")
                 return PrintErrorCode.UNKNOWN
 
+        def get_gcode_state(value) -> Optional[GcodeState]:
+            if value is None:
+                return None
+            try:
+                return GcodeState(value.lower())
+            except ValueError:
+                logger.warning(f"Unknown gcode state: {value}")
+                return GcodeState.UNKNOWN
+
         return OnPushStatusMessage(
             ams=AmsStatus.from_json(json_payload.get(
                 'ams')) if json_payload.get('ams') else None,
@@ -302,7 +313,7 @@ class OnPushStatusMessage:
             gcode_file_prepare_percent=json_payload.get(
                 'gcode_file_prepare_percent'),
             gcode_start_time=json_payload.get('gcode_start_time'),
-            gcode_state=json_payload.get('gcode_state'),
+            gcode_state=get_gcode_state(json_payload.get('gcode_state')),
             heatbreak_fan_speed=json_payload.get('heatbreak_fan_speed'),
             home_flag=safe_int(json_payload.get('home_flag')),
             hw_switch_state=safe_int(json_payload.get('hw_switch_state')),
