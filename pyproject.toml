@@ -32,8 +32,8 @@ bambu = "bambucli.cli:main"
 distribution = true
 
 [tool.pdm.version]
-source = "scm"
-tag_regex = "v([0-9]+\\.[0-9]+\\.[0-9]+)"
+source = "file"
+path = "bambucli/version.py"
 
 [tool.pdm.options]
 add = ["--no-self"]

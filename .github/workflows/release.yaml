@@ -22,6 +22,13 @@ jobs:
       - name: Install dependencies
         run: pdm install
         
+      - name: Extract version
+        id: version
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+
+      - name: Create version.py file
+        run: echo "__version__ = '${{ steps.version.outputs.VERSION }}'" > src/bambucli/version.py
+        
       - name: Build package and Publish to PyPI
         run: pdm publish
         env:
@@ -36,10 +43,6 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Extract version
-        id: version
-        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
