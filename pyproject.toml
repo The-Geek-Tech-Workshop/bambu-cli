@@ -33,7 +33,7 @@ distribution = true
 
 [tool.pdm.version]
 source = "file"
-path = "bambucli/version.py"
+path = "src/bambucli/version.py"
 
 [tool.pdm.options]
 add = ["--no-self"]
