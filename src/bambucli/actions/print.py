@@ -69,7 +69,7 @@ def print_file(args):
     #     ngrok_auth_token, spinner)
 
     def on_connect(client, reason_code):
-        client.print(remote_path, ams_mappings=ams_mapping)
+        client.print(remote_path, ams_mappings=ams_mapping, plate_number=args.plate)
 
     printer_monitor(printer, on_connect=on_connect)
 

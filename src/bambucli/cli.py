@@ -37,6 +37,8 @@ def main():
     print_parser.add_argument('printer', type=str, help='The printer to use')
     print_parser.add_argument('file', type=str, help='The file to print')
     print_parser.add_argument(
+        '--plate', type=int, default=1, help='The plate to print')
+    print_parser.add_argument(
         '--ams', type=str, nargs='+', help='The AMS filament mappings')
     print_parser.set_defaults(action=print_file)
 
