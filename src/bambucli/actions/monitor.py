@@ -26,12 +26,16 @@ def monitor(args):
                             ", ".join(printers_not_found)}' not found")
         return
 
-    # if printer.ip_address is None and printer.account_email is None:
-    #     spinner.task_in_progress("Checking for printer ip address")
-    #     try:
-    #         printer = ensure_printer_ip_address(printer)
-    #         spinner.task_complete()
-    #     except Exception as e:
-    #         spinner.task_failed(e)
+    def ensure_ip_if_needed(printer):
+        if printer.ip_address is None and printer.account_email is None:
+            spinner.task_in_progress("Checking for printer ip address")
+            try:
+                printer = ensure_printer_ip_address(printer)
+                spinner.task_complete()
+            except Exception as e:
+                spinner.task_failed(e)
+        return printer
+
+    printers = list(map(ensure_ip_if_needed, printers))
 
     dashboard(*printers)
