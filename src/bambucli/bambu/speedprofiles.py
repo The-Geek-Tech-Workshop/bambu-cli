@@ -23,5 +23,5 @@ class SpeedProfile(Enum):
     def from_str(speed_profile: str):
         for key, value in SPEED_PROFILE.items():
             if value == speed_profile:
-                return SpeedProfiles(key)
+                return SpeedProfile(key)
         return None
